@@ -44,23 +44,29 @@ int main (int argc, char *argv[]){
 }
 
 void findString(int fd, char* argv[]){
-    char buffer[4096];
+   // char buffer[4096];
     int ret = 0;
-    char tempBuf[4096];
-    int index = 0;
-    char emptyLine[4096];
+    char tempBuf[1];
+    string readIn;
+    string tempReadIn;
+
+    const char* searchString = argv[1];
 
     while ((ret = read(fd, tempBuf, 1)) > 0){
-        emptyLine.append(tempBuf[0]);
-        if (tempBuf[0] != '\n'){
-            if(emptyLine.find(argv[1]) < emptyLine){
-                emptyLine.c_str(); // not sure what this does 
-            
-                //     ret = write(STDOUT_FILENO, buffer, ret);
+        tempReadIn = tempBuf[0];
+        readIn.append(tempReadIn);      
+        if (tempBuf[0] == '\n'){
+            std::size_t findInString = readIn.find(searchString);
+            if(findInString !=std::string::npos){
+                const char* foundLine = readIn.c_str();
+                cout <<foundLine<< ": is foundLine" <<endl;
+                write(STDOUT_FILENO, foundLine, ret);
             }
-            else {cout <<"not in if statement" <<endl ;}
+            char *begin = &readIn[0];
+            char *end = begin + readIn.size();
+            std::fill(begin, end, 0); // from https://stackoverflow.com/questions/632846/clearing-a-char-array-c
         }
-        index++; 
+        tempBuf[0] = '\0';
     }
 };
 
