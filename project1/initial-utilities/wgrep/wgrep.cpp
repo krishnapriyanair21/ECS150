@@ -46,24 +46,27 @@ void findString(int fd, char* argv[]){
    // char buffer[4096];
     int ret = 0;
     char tempBuf[1];
-    string readIn;
-    string tempReadIn;
+    //  string readIn;
+    string tempReadIn = "";
 
     const char* searchString = argv[1];
 
     while ((ret = read(fd, tempBuf, 1)) > 0){
-        tempReadIn = tempBuf[0];
-        readIn.append(tempReadIn);      
+        tempReadIn = tempReadIn + tempBuf[0];
+         // readIn.append(tempReadIn);      
         if (tempBuf[0] == '\n'){
-            std::size_t findInString = readIn.find(searchString);
-            if(findInString !=std::string::npos){
-                const char* foundLine = readIn.c_str();
-                cout <<foundLine<< ": is foundLine" <<endl;
-                write(STDOUT_FILENO, foundLine, ret); // not writing
+           int lengthOfRead = tempReadIn.length() + 1;
+           char TBDPrintLine[lengthOfRead];
+           strcpy(TBDPrintLine, tempReadIn.c_str());
+           // std::size_t findInString = readIn.find(searchString);
+            if(strstr(TBDPrintLine, searchString)){ // findInString !=std::string::npos
+               // DEBUG cout <<foundLine<< ": is foundLine" <<endl;
+                write(STDOUT_FILENO, TBDPrintLine, lengthOfRead - 1); // why minus 1
             }
-            char *begin = &readIn[0];
-            char *end = begin + readIn.size();
-            std::fill(begin, end, 0); // from https://stackoverflow.com/questions/632846/clearing-a-char-array-c
+            tempReadIn = {"\0"} ;
+            // char *begin = &readIn[0];
+            // char *end = begin + readIn.size();
+            // std::fill(begin, end, 0); // from https://stackoverflow.com/questions/632846/clearing-a-char-array-c
         }
         tempBuf[0] = '\0';
     }

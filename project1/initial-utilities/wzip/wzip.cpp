@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 using namespace std;
-
+void writeOut(int count, char temp[]);
 int main (int argc, char *argv[]){
     // init vars
     int fd = 0;
@@ -14,7 +14,9 @@ int main (int argc, char *argv[]){
     int ret = 0;
     int i = 0;
     char temp[1];
-    int count = 0;
+    char rememberWhoYouAre[1];
+    int rememberCount = 1;
+    int count = 1;
     // char arr[4096];
     // int arrCount = 0;
 
@@ -29,20 +31,26 @@ int main (int argc, char *argv[]){
             return 1;
         }
         while ((ret = read(fd, buffer, 4096)) > 0 ){
-            temp[0] = buffer[0];
-            count = 0;
+            temp[0] = rememberWhoYouAre[0];
+            if (temp[0] != buffer[0]){
+                count = 1;
+            }
+            else{
+                count = rememberCount;
+            }
             for (int j = 0; j <= ret; j++){
                 if (temp[0] == buffer[j]){
                     count++;
+                    cout<< count << ": is count" <<endl;
                 }
                 else{
-                    write(STDOUT_FILENO, &count, 4);
-                    write(STDOUT_FILENO, temp, 1);
+                    if ()
                     temp[0] = buffer[j];
-                    count = 0;
+                    count = 1;
                 }
             }
-           
+           rememberWhoYouAre[0] = temp[0];
+           rememberCount = count;
         }
     }
 
@@ -56,3 +64,7 @@ int main (int argc, char *argv[]){
     return 0;
 }
 
+void writeOut(int count, char temp[]){
+    write(STDOUT_FILENO, &count, 4);
+    write(STDOUT_FILENO, temp, 1);
+}
