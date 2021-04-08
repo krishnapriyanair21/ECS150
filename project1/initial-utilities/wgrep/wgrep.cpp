@@ -22,7 +22,6 @@ int main (int argc, char *argv[]){
     if (argc < 3) {
         findString(STDIN_FILENO, argv);     
     } else{
-        /// how to check for no files?
         for (int j = argc; j > 2; j--){ // search term is first arg. open files after search term
             fd = open(argv[++i], O_RDONLY);
             if (fd == -1){  /// exit if bad file
@@ -60,7 +59,7 @@ void findString(int fd, char* argv[]){
             if(findInString !=std::string::npos){
                 const char* foundLine = readIn.c_str();
                 cout <<foundLine<< ": is foundLine" <<endl;
-                write(STDOUT_FILENO, foundLine, ret);
+                write(STDOUT_FILENO, foundLine, ret); // not writing
             }
             char *begin = &readIn[0];
             char *end = begin + readIn.size();

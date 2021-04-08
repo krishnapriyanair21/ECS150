@@ -30,17 +30,16 @@ int main (int argc, char *argv[]){
         }
         while ((ret = read(fd, buffer, 4096)) > 0 ){
             temp[0] = buffer[0];
-            count = 1;
-            cout <<"in while loop" <<endl;
+            count = 0;
             for (int j = 0; j <= ret; j++){
                 if (temp[0] == buffer[j]){
-                    cout <<buffer[j] << ": is current character as count " << count<<endl;
                     count++;
                 }
                 else{
-                    cout<< "write output" <<endl;
                     write(STDOUT_FILENO, &count, 4);
                     write(STDOUT_FILENO, temp, 1);
+                    temp[0] = buffer[j];
+                    count = 0;
                 }
             }
            
