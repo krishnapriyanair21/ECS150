@@ -23,7 +23,7 @@ int main (int argc, char *argv[]){
 
     if (argc == 1){
         cout << "wzip: file1 [file2 ...]" << endl;
-        return 1; // if no file print and return 1 
+        return 1; // if no file print and return 1
     }
     for (int j = argc; j > 1; j--){
         fd = open(argv[++i], O_RDONLY);
@@ -35,7 +35,7 @@ int main (int argc, char *argv[]){
             temp[0] = buffer[0];
             /* check previous file char */
             if (temp[0] != rememberWhoYouAre[0]){ //check if previous file had same char
-                if (j < argc - 1){
+                if (j < argc - 2){
                     // cout << count<<" :is count in first write" <<endl;
                     write(STDOUT_FILENO, &rememberCount, 4);
                     write(STDOUT_FILENO, rememberWhoYouAre, 1);
@@ -49,25 +49,32 @@ int main (int argc, char *argv[]){
                 count = rememberCount;
             }
 
-            // cout <<ret<< ": is ret"<<endl;
+           // cout <<ret<< ": is ret"<<endl;
             // cout <<argc<<":is argc" <<endl;
             // cout <<j <<": is j"<<endl;
             /*count iterations of cur char*/
             for (int k = 0; k < ret; k++){
                 if (temp[0] == buffer[k]){
                     count++;
-                    cout <<temp[0] << "is temp" <<endl;
+                    // cout <<temp[0] << "is temp" <<endl;
                     // cout <<k <<": is k and char is equal"<<endl;
-                }else {
+                }else if (temp[0] != buffer[k] && (k < ret)){
+                  //  cout <<"else if write" <<endl;
+                    write(STDOUT_FILENO, &count, 4);
+                    write(STDOUT_FILENO, temp, 1);
+                    temp[0] = buffer[k];
+                    count = 1;
+                }
+                else {
                     rememberWhoYouAre[0] = temp[0];
                     rememberCount = count;
                 }
                if (j == 2 && k == (ret - 1)){ // last file and last char
-                    // cout <<"write from in"<<endl;
+                    //cout <<"write from in"<<endl;
                     // cout << count<< ": is count" <<endl;
                     write(STDOUT_FILENO, &count, 4);
                     write(STDOUT_FILENO, temp, 1);
-                    temp[0] = buffer[j];
+                    temp[0] = buffer[k];
                     count = 1;
                 }
                 else{

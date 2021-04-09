@@ -14,6 +14,9 @@ int main (int argc, char *argv[]){
     char buffer[4096];
     int ret = 0;
     int i = 0;
+    char tempInt[4];
+    char charToRepeat;
+    int count = 0;
 
     if (argc == 1){
         cout << "wunzip: file1 [file2 ...]" << endl;
@@ -26,8 +29,17 @@ int main (int argc, char *argv[]){
             cout <<"wunzip: cannot open file"<<  endl;
             return 1;
         }
-        while ((ret = read(fd, buffer, 4096)) > 0 ){
-           ret = write(STDOUT_FILENO, buffer, ret);
+        while ((ret = read(fd, buffer, 1)) > 0 ){
+           count++;
+           if (count%5 == 0){
+               charToRepeat = buffer[0];
+           }
+           else{
+               tempInt[count%5 - 1] = buffer[0];
+               // write char tempInt number of times
+               // clear temp Int
+               
+           }
         }
     }
 
