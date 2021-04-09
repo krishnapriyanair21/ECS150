@@ -64,8 +64,7 @@ int main (int argc, char *argv[]){
                     write(STDOUT_FILENO, temp, 1);
                     temp[0] = buffer[k];
                     count = 1;
-                }
-                else {
+                }else {
                     rememberWhoYouAre[0] = temp[0];
                     rememberCount = count;
                 }
@@ -76,8 +75,7 @@ int main (int argc, char *argv[]){
                     write(STDOUT_FILENO, temp, 1);
                     temp[0] = buffer[k];
                     count = 1;
-                }
-                else{
+                } else{
                     rememberWhoYouAre[0] = temp[0];
                     rememberCount = count;
                 }

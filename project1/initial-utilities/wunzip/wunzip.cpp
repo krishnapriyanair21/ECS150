@@ -14,9 +14,10 @@ int main (int argc, char *argv[]){
     char buffer[4096];
     int ret = 0;
     int i = 0;
-    char tempInt[4];
-    char charToRepeat;
+    char tempInt[12];
+   char charToRepeat;
     int count = 0;
+    int finalCount = 0;
 
     if (argc == 1){
         cout << "wunzip: file1 [file2 ...]" << endl;
@@ -29,17 +30,25 @@ int main (int argc, char *argv[]){
             cout <<"wunzip: cannot open file"<<  endl;
             return 1;
         }
-        while ((ret = read(fd, buffer, 1)) > 0 ){
-           count++;
-           if (count%5 == 0){
-               charToRepeat = buffer[0];
-           }
-           else{
-               tempInt[count%5 - 1] = buffer[0];
-               // write char tempInt number of times
-               // clear temp Int
-               
-           }
+        while ((ret = read(fd, buffer, 4)) > 0 ){
+            finalCount = (int) buffer;
+            read(fd, buffer, 1);
+            charToRepeat = buffer[0];
+            cout<< finalCount << ": is final Count" <<endl;
+            cout << charToRepeat << " is char" <<endl;
+        //    if (count == 4){ // five loops
+        //       // charToRepeat = buffer[0];
+        //     //    std::stringstream ss(tempInt);
+        //     //    ss >> finalCount;
+        //         int num = (int)tempInt[3];
+        //         cout <<num << " is num" <<endl;
+        //        cout<< finalCount<<": finalCount" <<endl;
+        //        //char result[finalCount];  
+        //         count = 0;
+        //    }
+        //    else{
+        //        tempInt[count] = buffer[0];
+        //    }
         }
     }
 
