@@ -1,3 +1,4 @@
+/* worked with Dave Khalasi and Divya Singh*/
 #include <iostream>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -6,7 +7,7 @@
 #include <unistd.h>
 
 using namespace std;
-void writeOut(int count, char temp[]);
+//void writeOut(int count, char temp[]);
 int main (int argc, char *argv[]){
     // init vars
     int fd = 0;
@@ -16,7 +17,7 @@ int main (int argc, char *argv[]){
     char temp[1];
     char rememberWhoYouAre[1];
     int rememberCount = 1;
-    int count = 1;
+    int count = 0;
     // char arr[4096];
     // int arrCount = 0;
 
@@ -31,26 +32,49 @@ int main (int argc, char *argv[]){
             return 1;
         }
         while ((ret = read(fd, buffer, 4096)) > 0 ){
-            temp[0] = rememberWhoYouAre[0];
-            if (temp[0] != buffer[0]){
-                count = 1;
+            temp[0] = buffer[0];
+            /* check previous file char */
+            if (temp[0] != rememberWhoYouAre[0]){ //check if previous file had same char
+                if (j < argc - 1){
+                    // cout << count<<" :is count in first write" <<endl;
+                    write(STDOUT_FILENO, &rememberCount, 4);
+                    write(STDOUT_FILENO, rememberWhoYouAre, 1);
+                    count = 1;
+                }
+                else{
+                    count = 0;
+                }
             }
             else{
                 count = rememberCount;
             }
-            for (int j = 0; j <= ret; j++){
-                if (temp[0] == buffer[j]){
+
+            // cout <<ret<< ": is ret"<<endl;
+            // cout <<argc<<":is argc" <<endl;
+            // cout <<j <<": is j"<<endl;
+            /*count iterations of cur char*/
+            for (int k = 0; k < ret; k++){
+                if (temp[0] == buffer[k]){
                     count++;
-                    cout<< count << ": is count" <<endl;
+                    cout <<temp[0] << "is temp" <<endl;
+                    // cout <<k <<": is k and char is equal"<<endl;
+                }else {
+                    rememberWhoYouAre[0] = temp[0];
+                    rememberCount = count;
                 }
-                else{
-                    if ()
+               if (j == 2 && k == (ret - 1)){ // last file and last char
+                    // cout <<"write from in"<<endl;
+                    // cout << count<< ": is count" <<endl;
+                    write(STDOUT_FILENO, &count, 4);
+                    write(STDOUT_FILENO, temp, 1);
                     temp[0] = buffer[j];
                     count = 1;
                 }
+                else{
+                    rememberWhoYouAre[0] = temp[0];
+                    rememberCount = count;
+                }
             }
-           rememberWhoYouAre[0] = temp[0];
-           rememberCount = count;
         }
     }
 
@@ -62,9 +86,4 @@ int main (int argc, char *argv[]){
         else fd--;
     }
     return 0;
-}
-
-void writeOut(int count, char temp[]){
-    write(STDOUT_FILENO, &count, 4);
-    write(STDOUT_FILENO, temp, 1);
 }

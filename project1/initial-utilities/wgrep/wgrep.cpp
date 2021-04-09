@@ -1,3 +1,4 @@
+/* worked with Dave Khalasi and Divya Singh*/
 #include <iostream>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -43,30 +44,22 @@ int main (int argc, char *argv[]){
 }
 
 void findString(int fd, char* argv[]){
-   // char buffer[4096];
     int ret = 0;
     char tempBuf[1];
-    //  string readIn;
     string tempReadIn = "";
 
     const char* searchString = argv[1];
 
     while ((ret = read(fd, tempBuf, 1)) > 0){
-        tempReadIn = tempReadIn + tempBuf[0];
-         // readIn.append(tempReadIn);      
+        tempReadIn = tempReadIn + tempBuf[0]; // read in one char at a time
         if (tempBuf[0] == '\n'){
-           int lengthOfRead = tempReadIn.length() + 1;
-           char TBDPrintLine[lengthOfRead];
+           int lengthOfRead = tempReadIn.length() + 1; // find length of line
+           char TBDPrintLine[lengthOfRead]; // allocate space
            strcpy(TBDPrintLine, tempReadIn.c_str());
-           // std::size_t findInString = readIn.find(searchString);
-            if(strstr(TBDPrintLine, searchString)){ // findInString !=std::string::npos
-               // DEBUG cout <<foundLine<< ": is foundLine" <<endl;
-                write(STDOUT_FILENO, TBDPrintLine, lengthOfRead - 1); // why minus 1
+            if(strstr(TBDPrintLine, searchString)){  // if match print
+                write(STDOUT_FILENO, TBDPrintLine, lengthOfRead - 1); 
             }
-            tempReadIn = {"\0"} ;
-            // char *begin = &readIn[0];
-            // char *end = begin + readIn.size();
-            // std::fill(begin, end, 0); // from https://stackoverflow.com/questions/632846/clearing-a-char-array-c
+            tempReadIn = {"\0"} ; // reset
         }
         tempBuf[0] = '\0';
     }
