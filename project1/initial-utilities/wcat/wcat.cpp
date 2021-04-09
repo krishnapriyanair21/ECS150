@@ -20,9 +20,9 @@ int main (int argc, char *argv[]){
     }
 
     for (int j = argc; j > 1; j--){
-        fd = open(argv[++i], O_RDONLY);
+        fd = open(argv[++i], O_RDONLY)
         if (fd == -1){  /// exit if bad file
-            cout <<"wcat: cannot open file"<<  endl;
+            write(STDOUT_FILENO,"wcat: cannot open file\n", 24);
             return 1;
         }
         while ((ret = read(fd, buffer, 4096)) > 0 ){
@@ -32,7 +32,7 @@ int main (int argc, char *argv[]){
 
     while (fd >= 3){
         if (close(fd) > 0 ){
-            cout<< "wcat: cannot close file" <<endl;
+            write(STDOUT_FILENO,"wcat: cannot close file\n",25);
             return 1;
         }
         else fd--;
