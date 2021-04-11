@@ -17,7 +17,7 @@ int main (int argc, char *argv[]){
     int i = 1; // first term is search term
 
     if (argc == 1){
-        write(STDOUT_FILENO,"wgrep: searchterm [file ...]\n",30);
+        cout<<"wgrep: searchterm [file ...]"<<endl;
         return 1; // if no file error and cout 
     }
     if (argc < 3) {
@@ -26,16 +26,16 @@ int main (int argc, char *argv[]){
         for (int j = argc; j > 2; j--){ // search term is first arg. open files after search term
             fd = open(argv[++i], O_RDONLY);
             if (fd == -1){  /// exit if bad file
-                write(STDOUT_FILENO,"wgrep: cannot open file\n",25);
+                cout<<"wgrep: cannot open file" <<endl;
                 return 1;
             }
             findString(fd, argv);           
         }
     } 
 
-    while (fd > 3){  /// CHECK
+    while (fd > 3){  
         if (close(fd) > 0 ){
-            write(STDOUT_FILENO,"wgrep: cannot close file\n",26);
+            cout<<"wgrep: cannot close file"<<endl;
             return 1;
         }
         else fd--;
