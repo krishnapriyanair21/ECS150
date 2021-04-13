@@ -34,12 +34,10 @@ int main (int argc, char *argv[]){
     vector<std::string> parsedInput{};
     std::string rawInput;
     std::string inputForPushBack; 
-    unsigned int startChar = 0;
 
     while (getline(cin, rawInput)){
+        unsigned int startChar = 0; // change startChar to zero every new input
         for (unsigned int i = 0; i < rawInput.length(); i++){
-
-
             if (rawInput[i] == ' ' ){
                 inputForPushBack = rawInput.substr(startChar, i);
                 startChar = (i + 1); 
@@ -54,6 +52,7 @@ int main (int argc, char *argv[]){
             else{
                 continue; /// add case where multiple spaces or tabs or newlines all in first if 
             }
+            cout << startChar<<" startChar outside for loop" <<endl;
         }
         cout<<inputForPushBack<< " is input for push back" <<endl; 
 
