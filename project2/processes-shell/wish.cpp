@@ -29,13 +29,34 @@ using namespace std;
 // }
 int main (int argc, char *argv[]){
 
-    // std::vector<std::string> parsedInput = parseInput(); 
     cout<<"wish> ";
+
     vector<std::string> parsedInput{};
     std::string rawInput;
+    std::string inputForPushBack; 
+    unsigned int startChar = 0;
+
     while (getline(cin, rawInput)){
-        cout <<"check"<<endl;
-        parsedInput.push_back(rawInput);
+        for (unsigned int i = 0; i < rawInput.length(); i++){
+
+
+            if (rawInput[i] == ' ' ){
+                inputForPushBack = rawInput.substr(startChar, i);
+                startChar = (i + 1); 
+                cout << startChar << " is start char" <<endl;
+                parsedInput.push_back(inputForPushBack);
+            }
+            else if (i == (rawInput.length() - 1)) { // if nothing else PUSH IT
+                cout << startChar << " is start char in else if" <<endl;
+                inputForPushBack = rawInput.substr(startChar, i + 1); // startChar == 0????  WHY 
+                parsedInput.push_back(inputForPushBack);                
+            }
+            else{
+                continue; /// add case where multiple spaces or tabs or newlines all in first if 
+            }
+        }
+        cout<<inputForPushBack<< " is input for push back" <<endl; 
+
         cout << parsedInput.size() << " is size" <<endl;
         // need to track last iteration input point and run from that point to size
             for (unsigned int i = 0; i < parsedInput.size(); i++){
