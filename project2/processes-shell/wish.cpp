@@ -33,20 +33,24 @@ int main (int argc, char *argv[]){
     cout<<"wish> ";
     vector<std::string> parsedInput{};
     std::string rawInput;
-    while (getline(cin, rawInput))
-    {
+    while (getline(cin, rawInput)){
         cout <<"check"<<endl;
         parsedInput.push_back(rawInput);
-        /// track which element we're on 
-        while (!parsedInput.empty()){
-            if (parsedInput[0] == "exit"){ // curr element in parsedInput == "exit" IS INCORRECT
-                return 0;
+        cout << parsedInput.size() << " is size" <<endl;
+        // need to track last iteration input point and run from that point to size
+            for (unsigned int i = 0; i < parsedInput.size(); i++){
+                if (parsedInput[i] == "exit"){  /// iterate through every previous command 
+                    return 0;
+                }
+                else if (parsedInput[i] == "cd"){
+                    cout<< "cd";
+                }
+                else{
+                    cout << parsedInput[i] << " is parsedInput[i]" <<endl;
+                    
+                }
             }
-            else{
-                cout<<"wish> ";
-                break;
-            }
-        }
+            cout<<"wish> ";
     }
     
 
