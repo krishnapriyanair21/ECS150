@@ -31,7 +31,7 @@ int main (int argc, char *argv[]){
 
     cout<<"wish> ";
 
-    vector<std::string> parsedInput{};
+    vector<std::string> parsedInput;
     std::string rawInput;
     std::string inputForPushBack; 
 
