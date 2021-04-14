@@ -51,6 +51,7 @@ void modes(vector<string> parsedInput){
         } else if (parsedInput[i] == "cd"){
             if (parsedInput.size() <= (i + 1)){
                 printError0();
+                break;
             }else{
                 string convertString = parsedInput[i + 1];
                 int destSize = convertString.size();
@@ -64,10 +65,12 @@ void modes(vector<string> parsedInput){
             }
             break;
         } else if (parsedInput[i] == "ls"){
-            // check if next input starts with
-            char *args[];
-            args[0] = strdup("ls");
-            execv(args[0], args);
+            // check if next input starts with -
+                char *args[3];
+                args[0] = strdup("ls");
+                args[1] = strdup("-l");
+                args[2]= NULL;
+                execv(args[0], args); /// does not work 
         }
     }
     return;
