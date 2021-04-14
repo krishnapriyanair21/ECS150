@@ -10,21 +10,11 @@
 
 using namespace std;
 
-vector<string> parse(string rawInput){ // from stack overflow
-    istringstream s(rawInput);
-    vector<string> parsedInput;
-    string cmdx; // command at x 
-    while(s >> cmdx){
-        parsedInput.push_back(cmdx);
-    }
-    return parsedInput;
-}
-
-void printError0(){
-    cerr<<"An error has occurred"<<endl;
-    exit(0);
-}
+vector<string> parse(string rawInput);
+void printError0();
+void printError1();
 void modes(vector<string> parsedInput);
+
 int main (int argc, char *argv[]){
 
     vector<string> parsedInput;
@@ -58,8 +48,7 @@ void modes(vector<string> parsedInput){
     for (unsigned int i = 0; i < parsedInput.size(); i++){ 
         if (parsedInput[i] == "exit"){  
             exit(0);
-        }
-        else if (parsedInput[i] == "cd"){
+        } else if (parsedInput[i] == "cd"){
             if (parsedInput.size() <= (i + 1)){
                 printError0();
             }else{
@@ -74,13 +63,29 @@ void modes(vector<string> parsedInput){
                 }     
             }
             break;
-        }
-        else if (parsedInput[i] == "ls"){
+        } else if (parsedInput[i] == "ls"){
             // check if next input starts with
-            char *args[0];
+            char *args[];
             args[0] = strdup("ls");
-            execvp(args[0], args);
+            execv(args[0], args);
         }
     }
     return;
+}
+vector<string> parse(string rawInput){  // stack overflow
+    istringstream s(rawInput);
+    vector<string> parsedInput;
+    string cmdx; // command at x 
+    while(s >> cmdx){
+        parsedInput.push_back(cmdx);
+    }
+    return parsedInput;
+}
+void printError0(){
+    cerr<<"An error has occurred"<<endl;
+    exit(0);
+}
+void printError1(){
+    cerr<<"An error has occurred"<<endl;
+    exit(1);
 }
