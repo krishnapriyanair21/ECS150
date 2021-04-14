@@ -1,13 +1,13 @@
 #include <cstring>
 #include <iostream>
 #include <string>
-
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <vector>
 #include <sstream>
 #include <fstream>
+
 using namespace std;
 
 vector<string> parse(string rawInput){ // from stack overflow
@@ -20,45 +20,82 @@ vector<string> parse(string rawInput){ // from stack overflow
     return parsedInput;
 }
 
+void printError0(){
+    cerr<<"An error has occurred"<<endl;
+    cout <<"printed"<<endl;
+    exit(0);
+}
 int main (int argc, char *argv[]){
 
-    cout<<"wish> ";
-
-    vector<std::string> parsedInput;
+    vector<string> parsedInput;
     string rawInput;
 
     if (argc == 1){ // interactive
-        while (getline(cin, rawInput)){ /// loop until exit
-            cout <<"rawInput: " << rawInput<<endl;
+        while (getline(cin, rawInput)){ 
             parsedInput = parse(rawInput);
-            for (unsigned int i = 0; i < parsedInput.size(); i++){ // iterate through every previous command 
-                cout << "testing! " << parsedInput[i] <<" at " << i <<endl;
+            for (unsigned int i = 0; i < parsedInput.size(); i++){ 
                 if (parsedInput[i] == "exit"){  
                     exit(0);
                 }
                 else if (parsedInput[i] == "cd"){
-                    // cout<< "cd";
-                    continue;
+                    if (parsedInput.size() <= (i + 1)){
+                        printError0();
+                    }else{
+                        string convertString = parsedInput[i + 1];
+                        int destSize = convertString.size();
+                        char dirToChange[destSize + 1];
+                        strcpy(dirToChange, convertString.c_str()); // need char array for chdir()
+                        if (chdir(dirToChange) == 0){
+                            continue;
+                        } else{
+                            printError0();
+                        }     
+                    }
+                    break;
+                }
+                else if (parsedInput[i] == "ls"){
+                    // check if next input starts with
+                    char *args[0];
+                    args[0] = strdup("ls");
+                    execvp(args[0], args);
+                    return 1;
                 }
             }
             cout<<"wish> ";
         }
-    }else{ // batch
+    }else if (argc > 1){ // batch
         for (int i = 1; i < argc; i++){
             ifstream inputFile;
             inputFile.open(argv[i]);
-            while(getline(inputFile, rawInput)){
-                parsedInput = parse(rawInput);
-                for (unsigned int i = 0; i < parsedInput.size(); i++){ // iterate through every previous command 
+            
+            parsedInput = parse(rawInput);
+            for (unsigned int i = 0; i < parsedInput.size(); i++){ 
                 if (parsedInput[i] == "exit"){  
                     exit(0);
                 }
                 else if (parsedInput[i] == "cd"){
-                    // cout<< "cd";
-                    continue;
+                    if (parsedInput.size() <= (i + 1)){
+                        printError0();
+                    }else{
+                        string convertString = parsedInput[i + 1];
+                        int destSize = convertString.size();
+                        char dirToChange[destSize + 1];
+                        strcpy(dirToChange, convertString.c_str()); // need char array for chdir()
+                        if (chdir(dirToChange) == 0){
+                            continue;
+                        } else{
+                            printError0();
+                        }     
+                    }
+                    break;     
                 }
-            }
-            cout<<"wish> ";
+                else if (parsedInput[i] == "ls"){
+                    // check if next input starts with
+                    char *args[0];
+                    args[0] = strdup("ls");
+                    execvp(args[0], args);
+                    return 1;
+                }
             }
             inputFile.close();
         }
