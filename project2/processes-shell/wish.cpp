@@ -50,6 +50,14 @@ int main (int argc, char *argv[]){
 }
 
 void executeCmd(vector<string> parsedInput, vector<string> &path){
+    // bool redirect = false;
+    // bool para = false;
+    // for (unsigned int i = 0; i < parsedInput.size(); i++){
+    //     if (parsedInput[i] == "&")
+    //         para = true;
+    //     if (parsedInput[i] == ">")
+    //         redirect = true;
+    // }
     for (unsigned int i = 0; i < parsedInput.size(); i++){ 
         if (parsedInput[i] == "exit"){  
             exit(0);
@@ -74,7 +82,17 @@ void executeCmd(vector<string> parsedInput, vector<string> &path){
         } else if (parsedInput[i] == "path") {
            pathFunction(parsedInput, path);
         }else{
-            
+            char *arg[parsedInput.size() + 1];
+            for (unsigned int j = 0; j < parsedInput.size(); j++){
+                arg[j] = new char[parsedInput[j].size() + 1];
+                strcpy(arg[j], parsedInput[j].c_str());
+            }
+            arg[parsedInput.size()] = nullptr;
+            for (unsigned int j = 0; j < path.size(); j++){
+                char newCmd[path[j].size() + parsedInput.size() + 1];
+                strcpy(newCmd, (path[j] + parsedInput[0]).c_str());
+                execv(newCmd, arg);
+            }
             printError0();
         }
     }
@@ -84,6 +102,9 @@ void executeCmd(vector<string> parsedInput, vector<string> &path){
 void pathFunction(vector<string> parsedInput, vector<string> &path){
     path.clear();
     path.push_back("");
+    if (parsedInput.size() == 1){
+        path.push_back("/bin/");
+    }
     for (unsigned int i = 1; i < parsedInput.size(); i++){
         if (parsedInput[i][0] != '/') 
             parsedInput[i] = "/" + parsedInput [i];
