@@ -60,35 +60,43 @@ int main (int argc, char *argv[]){
 }
 
 void executeCmd(vector<string> parsedInput, vector<string> &path){
-        if (parsedInput[0] == "exit"){  
-            if (parsedInput.size() > 1){
-                printError(); 
-            }else{
-                exit(0);
-            }
-        } else if (parsedInput[0] == "cd"){
-            if (parsedInput.size() < 2 ){
-                printError(); 
-            }else{
-                string convertString = parsedInput[1];
-                int destSize = convertString.size();
-                char dirToChange[destSize + 1];
-                strcpy(dirToChange, convertString.c_str()); // need char array for chdir()
-                if (!(chdir(dirToChange) == 0)){
-                    printError();
-                }     
-            }
-        } else if (parsedInput[0] == "path") {
-           pathFunction(parsedInput, path);
+    enum type {normal, parallel, redirection};
+    if (parsedInput[0] == "exit"){  
+        if (parsedInput.size() > 1){
+            printError(); 
         }else{
+            exit(0);
+        }
+    } else if (parsedInput[0] == "cd"){
+        if (parsedInput.size() < 2 ){
+            printError(); 
+        }else{
+            string convertString = parsedInput[1];
+            int destSize = convertString.size();
+            char dirToChange[destSize + 1];
+            strcpy(dirToChange, convertString.c_str()); // need char array for chdir()
+            if (!(chdir(dirToChange) == 0)){
+                printError();
+            }     
+        }
+    } else if (parsedInput[0] == "path") {
+        pathFunction(parsedInput, path);
+    }else{
+        // redirection parallel or normal 
+        if (type == 0){
             pid_t ret = fork();
             if (ret == 0){
-                // redirection parallel or normal 
                 executeBuiltIn(parsedInput, path);
             } else{
                 wait(NULL);
             }
+        }else if (type == 1){ // parallel
+
+        } else if (type == 2){
+
         }
+        
+    }
     return;
 }
 
