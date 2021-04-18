@@ -18,6 +18,11 @@ void printError();
 void executeCmd(vector<string> parsedInput, vector<string> &path);
 void pathFunction(vector<string> parsedInput, vector<string> &path);
 void executeBuiltIn (vector<string> parsedInput, vector<string> &path);
+int checkMode(vector<string> parsedInput);
+int redirectSyntaxCheck(vector<string> parsedInput);
+int parallelSyntaxCheck(vector<string> parsedInput);
+void redirect(vector<string> parsedInput, vector<string> path);
+void addSpaces(vector<string> &parsedInput);
 
 int main (int argc, char *argv[]){
 
@@ -49,6 +54,7 @@ int main (int argc, char *argv[]){
                 while (getline(inputFile, rawInput)){
                     parsedInput = parse(rawInput);
                     if (parsedInput.size() > 0){
+                        checkMode(parsedInput);
                         executeCmd(parsedInput,curPath);
                     }
                 }
@@ -60,7 +66,6 @@ int main (int argc, char *argv[]){
 }
 
 void executeCmd(vector<string> parsedInput, vector<string> &path){
-    enum type {normal, parallel, redirection};
     if (parsedInput[0] == "exit"){  
         if (parsedInput.size() > 1){
             printError(); 
@@ -82,17 +87,30 @@ void executeCmd(vector<string> parsedInput, vector<string> &path){
     } else if (parsedInput[0] == "path") {
         pathFunction(parsedInput, path);
     }else{
+        int type = checkMode(parsedInput);
         // redirection parallel or normal 
-        if (type == 0){
+        if (type == 0){ // normal
             pid_t ret = fork();
             if (ret == 0){
                 executeBuiltIn(parsedInput, path);
             } else{
                 wait(NULL);
             }
-        }else if (type == 1){ // parallel
-
-        } else if (type == 2){
+        }else if (type == 1){ // redirect
+            string currCmd = parsedInput[parsedInput.size() - 1];
+            if (currCmd[currCmd.length() - 1] == '>'){
+                printError();
+                return;
+            }
+            if (redirectSyntaxCheck(parsedInput) == -1){ // make sure redirect is formatted correct
+                printError();
+                return;
+            }
+            redirect(parsedInput, path);
+        } else if (type == 2){ // parallel
+            if (parsedInput[0] == "&") // only &
+                return;
+        }else if (type == 3){ // para + redirect
 
         }
         
@@ -145,4 +163,102 @@ void executeBuiltIn (vector<string> parsedInput, vector<string> &path){
     }
     printError();
     exit(1); // cannot execute built in 
+}
+
+int checkMode(vector<string> parsedInput){
+    // normal = 0, redirect = 1, parallel = 2, redirect + para = 3
+    int amps = 0; // ampersand
+    int arrow = 0; // redirect
+
+    for(unsigned int i = 0; i < parsedInput.size(); i++){
+        string currString = parsedInput[i];
+        for(unsigned int j = 0; j < currString.length(); j++){
+            if (currString[j] == '>')
+                arrow++;
+            if (currString[j] == '&')
+                amps++;
+        }
+    }
+    if (arrow > 0 && amps > 0) // redirect + para
+        return 3;
+    else if (amps > 0) // parallel
+        return 2;
+    else if (arrow > 0) // redirect
+        return 1;
+    else // normal
+        return 0;
+}
+
+int redirectSyntaxCheck(vector<string> parsedInput){
+    int output = 0;
+    int arrow = 0;
+    for (unsigned int i = 0; i < parsedInput.size(); i++){
+        if (parsedInput[i] == ">"){
+            arrow++;
+            if (parsedInput.size() - i > 1)
+                output = -1;
+        }
+    }
+    if (arrow > 1)
+        output = -1;
+    return output;
+}
+
+int parallelSyntaxCheck(vector<string> parsedInput){
+     // int output = 0;
+     return 0;
+}
+
+void redirect(vector<string> parsedInput, vector<string> path){
+    vector<string> inputCmd;
+    string outputFileTemp;
+    char outputFile[4096];
+    vector<string> inputOneCmd;
+    for (unsigned int i = 0; i < parsedInput.size(); i++){
+        string curr = parsedInput[i];
+        if (curr == ">"){
+            outputFileTemp = parsedInput[i + 1];
+            break;
+        }
+        else
+            inputCmd.push_back(curr);
+    }
+    strcpy(outputFile, outputFileTemp.c_str());
+    for (unsigned int i = 0; i < inputCmd.size(); i++){
+        inputOneCmd.clear();
+        inputOneCmd.push_back(inputCmd[i]);
+        int fd = open(outputFile, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
+        if (fd < 0){ // error check
+            cerr<< "couldn't open file" <<endl;
+        }
+        dup2(fd, 1);
+        dup2(fd, 2);
+        pid_t ret = fork();
+        if (ret == 0){
+            executeBuiltIn(inputOneCmd, path);
+        }else{
+            wait(NULL);
+        }
+    }
+}
+
+vector<string> addSpaces(vector<string> parsedInput){
+    vector<string> inputToSendBack;
+    string temp;
+    for (unsigned int i = 0; i < parsedInput.size(); i++){
+        string curr = parsedInput[i];
+        for (unsigned int j = 0; i < curr.length(); i++){
+            temp.append(curr[i]);
+            if (curr[j] == '>'){
+                if (curr[j - 1] != ' '){
+                    curr.insert(j - 1, " "); // insert space before >
+                    j = j + 3; // go to after >
+                }
+                if (curr[j + 1] != ' '){
+
+                }
+            }
+            
+        }
+    }
 }
