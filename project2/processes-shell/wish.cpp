@@ -22,7 +22,7 @@ int checkMode(vector<string> parsedInput);
 int redirectSyntaxCheck(vector<string> parsedInput);
 int parallelSyntaxCheck(vector<string> parsedInput);
 void redirect(vector<string> parsedInput, vector<string> path);
-void addSpaces(vector<string> &parsedInput);
+vector<string> addSpaces(vector<string> parsedInput);
 
 int main (int argc, char *argv[]){
 
@@ -106,7 +106,9 @@ void executeCmd(vector<string> parsedInput, vector<string> &path){
                 printError();
                 return;
             }
-            redirect(parsedInput, path);
+            vector<string> tempInput;
+            tempInput = addSpaces(parsedInput);
+            redirect(tempInput, path);
         } else if (type == 2){ // parallel
             if (parsedInput[0] == "&") // only &
                 return;
@@ -213,52 +215,92 @@ void redirect(vector<string> parsedInput, vector<string> path){
     vector<string> inputCmd;
     string outputFileTemp;
     char outputFile[4096];
-    vector<string> inputOneCmd;
     for (unsigned int i = 0; i < parsedInput.size(); i++){
         string curr = parsedInput[i];
+        // cout <<curr << " is curr string" <<endl;
         if (curr == ">"){
             outputFileTemp = parsedInput[i + 1];
+            // cout << outputFileTemp << " is outputFile" <<endl;
             break;
         }
         else
             inputCmd.push_back(curr);
     }
     strcpy(outputFile, outputFileTemp.c_str());
-    for (unsigned int i = 0; i < inputCmd.size(); i++){
-        inputOneCmd.clear();
-        inputOneCmd.push_back(inputCmd[i]);
+    pid_t ret = fork();
+    if (ret == 0){
         int fd = open(outputFile, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
         if (fd < 0){ // error check
             cerr<< "couldn't open file" <<endl;
         }
         dup2(fd, 1);
         dup2(fd, 2);
-        pid_t ret = fork();
-        if (ret == 0){
-            executeBuiltIn(inputOneCmd, path);
-        }else{
-            wait(NULL);
-        }
+        executeBuiltIn(inputCmd, path);
+    }else{
+        wait(NULL);
     }
 }
 
 vector<string> addSpaces(vector<string> parsedInput){
     vector<string> inputToSendBack;
-    string temp;
+    string temp= "";
+    bool check = false;
+    string tempWithArrow = "";
+    string tempWithAmps= "";
     for (unsigned int i = 0; i < parsedInput.size(); i++){
         string curr = parsedInput[i];
-        for (unsigned int j = 0; i < curr.length(); i++){
-            temp.append(curr[i]);
+        for (unsigned int j = 0; j < curr.length(); j++){
             if (curr[j] == '>'){
-                if (curr[j - 1] != ' '){
-                    curr.insert(j - 1, " "); // insert space before >
-                    j = j + 3; // go to after >
+                if (curr[j - 1] != ' ' && curr[j + 1] != ' '){
+                    tempWithArrow = " > ";
+                    check = true;
                 }
-                if (curr[j + 1] != ' '){
-
+                else if (curr[j - 1] != ' '){
+                    tempWithArrow = " >";
+                    check = true;
                 }
+                else if(curr[j + 1] != ' '){
+                    tempWithArrow = "> ";
+                    check = true;
+                }
+                temp.append(tempWithArrow); 
+                // cout << temp << " after append with arrow"<<endl;
+                tempWithArrow = "";
             }
-            
+            if (curr[j] == '&'){
+                if (curr[j - 1] != ' ' && curr[j + 1] != ' '){
+                    tempWithAmps = " & ";
+                    check = true;
+                }
+                else if (curr[j - 1] != ' '){
+                    tempWithAmps = " &";
+                    check = true;
+                }
+                else if (curr[j + 1] != ' '){
+                    tempWithAmps = "& ";
+                    check = true;
+                }
+                temp.append(tempWithAmps);
+                // cout << temp <<" after append with amps"<<endl;
+                tempWithAmps = "";
+            }
+            if (!check){
+                temp.push_back(curr[j]); // for char use push back for string use append
+            }
+            check = false;
+            if (j == curr.length() - 1 && i != parsedInput.size() - 1){ // add space at the end
+                temp.push_back(' ');
+            }
         }
+        // cout <<temp << " before pushback" <<endl;
+        inputToSendBack.push_back(temp); 
+        temp = "";
     }
+    for (unsigned int i = 0; i < inputToSendBack.size(); i++){ // reparse input
+        // cout <<inputToSendBack[i] << " is at " << i <<endl;
+        temp = temp + inputToSendBack[i];
+        // cout << temp << " is temp" <<endl;
+    }
+    inputToSendBack = parse(temp);
+    return inputToSendBack;
 }
