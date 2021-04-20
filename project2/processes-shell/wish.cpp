@@ -20,9 +20,10 @@ void pathFunction(vector<string> parsedInput, vector<string> &path);
 void executeBuiltIn (vector<string> parsedInput, vector<string> &path);
 int checkMode(vector<string> parsedInput);
 int redirectSyntaxCheck(vector<string> parsedInput);
-int parallelSyntaxCheck(vector<string> parsedInput);
 void redirect(vector<string> parsedInput, vector<string> path);
 vector<string> addSpaces(vector<string> parsedInput);
+void parallel (vector<string> parsedInput, vector<string> path);
+vector<string> removeAmps(vector<string> parsedInput);
 
 int main (int argc, char *argv[]){
 
@@ -66,6 +67,7 @@ int main (int argc, char *argv[]){
 }
 
 void executeCmd(vector<string> parsedInput, vector<string> &path){
+    vector<string> tempInput;
     if (parsedInput[0] == "exit"){  
         if (parsedInput.size() > 1){
             printError(); 
@@ -106,13 +108,16 @@ void executeCmd(vector<string> parsedInput, vector<string> &path){
                 printError();
                 return;
             }
-            vector<string> tempInput;
             tempInput = addSpaces(parsedInput);
             redirect(tempInput, path);
         } else if (type == 2){ // parallel
             if (parsedInput[0] == "&") // only &
                 return;
+            tempInput = addSpaces(parsedInput);
+            tempInput = removeAmps(tempInput);
+            parallel(tempInput, path);
         }else if (type == 3){ // para + redirect
+            
 
         }
         
@@ -191,6 +196,7 @@ int checkMode(vector<string> parsedInput){
         return 0;
 }
 
+/* Edge case checks*/
 int redirectSyntaxCheck(vector<string> parsedInput){
     int output = 0;
     int arrow = 0;
@@ -206,21 +212,15 @@ int redirectSyntaxCheck(vector<string> parsedInput){
     return output;
 }
 
-int parallelSyntaxCheck(vector<string> parsedInput){
-     // int output = 0;
-     return 0;
-}
-
+/* All redirection code */
 void redirect(vector<string> parsedInput, vector<string> path){
     vector<string> inputCmd;
     string outputFileTemp;
     char outputFile[4096];
     for (unsigned int i = 0; i < parsedInput.size(); i++){
         string curr = parsedInput[i];
-        // cout <<curr << " is curr string" <<endl;
         if (curr == ">"){
             outputFileTemp = parsedInput[i + 1];
-            // cout << outputFileTemp << " is outputFile" <<endl;
             break;
         }
         else
@@ -235,12 +235,14 @@ void redirect(vector<string> parsedInput, vector<string> path){
         }
         dup2(fd, 1);
         dup2(fd, 2);
+        close(fd);
         executeBuiltIn(inputCmd, path);
     }else{
         wait(NULL);
     }
 }
 
+/* Add spaces to input where necessary */
 vector<string> addSpaces(vector<string> parsedInput){
     vector<string> inputToSendBack;
     string temp= "";
@@ -264,11 +266,14 @@ vector<string> addSpaces(vector<string> parsedInput){
                     check = true;
                 }
                 temp.append(tempWithArrow); 
-                // cout << temp << " after append with arrow"<<endl;
                 tempWithArrow = "";
             }
             if (curr[j] == '&'){
-                if (curr[j - 1] != ' ' && curr[j + 1] != ' '){
+                if (j == curr.length() - 1){
+                    tempWithAmps = "";
+                    check = true;
+                }
+                else if (curr[j - 1] != ' ' && curr[j + 1] != ' '){
                     tempWithAmps = " & ";
                     check = true;
                 }
@@ -281,7 +286,6 @@ vector<string> addSpaces(vector<string> parsedInput){
                     check = true;
                 }
                 temp.append(tempWithAmps);
-                // cout << temp <<" after append with amps"<<endl;
                 tempWithAmps = "";
             }
             if (!check){
@@ -292,15 +296,39 @@ vector<string> addSpaces(vector<string> parsedInput){
                 temp.push_back(' ');
             }
         }
-        // cout <<temp << " before pushback" <<endl;
         inputToSendBack.push_back(temp); 
         temp = "";
     }
     for (unsigned int i = 0; i < inputToSendBack.size(); i++){ // reparse input
-        // cout <<inputToSendBack[i] << " is at " << i <<endl;
         temp = temp + inputToSendBack[i];
-        // cout << temp << " is temp" <<endl;
     }
     inputToSendBack = parse(temp);
     return inputToSendBack;
+}
+
+void parallel (vector<string> parsedInput, vector<string> path){
+    vector<string> inputCmd;
+    unsigned int size = parsedInput.size();
+    for (unsigned int i = 0; i < parsedInput.size(); i++){
+        inputCmd.clear();
+        inputCmd.push_back(parsedInput[i]);
+        pid_t ret = fork();
+        if (ret == 0){
+            executeBuiltIn(inputCmd, path);
+        }
+    }
+    while(size != 0){
+        wait(NULL);
+        size--;
+    }
+}
+
+vector<string> removeAmps(vector<string> parsedInput){
+    vector<string> returnVal;
+    for (unsigned int i = 0; i < parsedInput.size(); i++){
+        if (parsedInput[i] != "&"){
+            returnVal.push_back(parsedInput[i]);
+        }
+    }
+    return returnVal;
 }
