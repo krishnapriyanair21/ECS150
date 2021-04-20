@@ -10,6 +10,10 @@
 #include <sstream>
 #include <fstream>
 #include <sys/wait.h>
+#include <sys/uio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/stat.h>
 
 using namespace std;
 
@@ -24,6 +28,7 @@ void redirect(vector<string> parsedInput, vector<string> path);
 vector<string> addSpaces(vector<string> parsedInput);
 void parallel (vector<string> parsedInput, vector<string> path);
 vector<string> removeAmps(vector<string> parsedInput);
+void redirectAndParallel (vector<string> parsedInput, vector<string> &path);
 
 int main (int argc, char *argv[]){
 
@@ -117,8 +122,7 @@ void executeCmd(vector<string> parsedInput, vector<string> &path){
             tempInput = removeAmps(tempInput);
             parallel(tempInput, path);
         }else if (type == 3){ // para + redirect
-            
-
+            redirectAndParallel(parsedInput, path);
         }
         
     }
@@ -152,7 +156,8 @@ vector<string> parse(string rawInput){  // stack overflow
 }
 
 void printError(){
-    cerr<<"An error has occurred"<<endl;
+    char error_message[30] = "An error has occurred\n";
+    write(STDERR_FILENO, error_message, strlen(error_message)); 
 }
 
 void executeBuiltIn (vector<string> parsedInput, vector<string> &path){
@@ -229,7 +234,7 @@ void redirect(vector<string> parsedInput, vector<string> path){
     strcpy(outputFile, outputFileTemp.c_str());
     pid_t ret = fork();
     if (ret == 0){
-        int fd = open(outputFile, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR);
+        int fd = open(outputFile, O_RDWR | O_TRUNC | O_CREAT, 0644);
         if (fd < 0){ // error check
             cerr<< "couldn't open file" <<endl;
         }
@@ -331,4 +336,35 @@ vector<string> removeAmps(vector<string> parsedInput){
         }
     }
     return returnVal;
+}
+void redirectAndParallel (vector<string> parsedInput, vector<string> &path){
+    vector<string> inputCmd;
+    string outputFileTemp = "";
+    char outputFile[4096];
+    for (unsigned int i = 0; i < parsedInput.size(); i++){
+            if (parsedInput[i] == ">"){
+                outputFileTemp = parsedInput[i + 1];
+                break;
+            }
+            else if (parsedInput[i] == "&"){
+                strcpy(outputFile, outputFileTemp.c_str());
+                pid_t ret = fork();
+                if (ret == 0){
+                    int fd = open(outputFile, O_RDWR | O_TRUNC | O_CREAT, 0644 );
+                    if (fd < 0){ // error check
+                        cerr<< "couldn't open file" <<endl;
+                    }
+                    dup2(fd, 1);
+                    dup2(fd, 2);
+                    close(fd);
+                    executeBuiltIn(inputCmd, path);
+                }else{
+                    wait(NULL);
+                }
+            }
+            else{
+                inputCmd.push_back(parsedInput[i]);
+            }
+    }
+    redirect(inputCmd, path);
 }
