@@ -28,7 +28,50 @@ string BASEDIR = "static";
 string SCHEDALG = "FIFO";
 string LOGFILE = "/dev/null";
 
+pthread_mutex_t lockThread = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t roomForThread, requirements = PTHREAD_COND_INITIALIZER;
+
 vector<HttpService *> services;
+
+// define queue structs and create buffer queue
+struct node{
+  struct node* next;
+  MySocket *clientSocket;
+};
+typedef struct node node_t;
+struct queue{
+  node_t* head = NULL;
+  node_t* tail = NULL;
+}
+typedef struct queue queue_t;
+
+queue_t<MySocket*> buff[BUFFER_SIZE];
+
+void enqueue(MySocket *clientSocket){
+  node_t* nn = new node_t;
+  nn->clientSocket = clientSocket;
+  if (tail== NULL){
+    head = nn;
+  } else{
+    tail->next = nn;
+  }
+  tail = nn;
+}
+
+MySocket* dequeue(){
+  if (head == NULL){
+    return NULL;
+  } else{
+    MySocket* returnVal = head->clientSocket;
+    node_t* tempToDelete = head;
+    head = head->next;
+    if (head == NULL){
+      tail = NULL;
+    }
+    free(tempToDelete);
+    return returnVal;
+  }
+}
 
 HttpService *find_service(HTTPRequest *request) {
    // find a service that is registered for this path prefix
@@ -65,23 +108,9 @@ void invoke_service_method(HttpService *service, HTTPRequest *request, HTTPRespo
   }
 }
 
-// FIFO consumer function
-// handle first request in buffer
-void handle_threads(){
-
-  
-  
-  // pthread_cond_t bufferIsEmpty;
-  // pthread_cond_t bufferIsFull;
-  // pthread_mutex_lock lock;
-  // pthread_t newThread;
-  // pthread_attr_t
-  // dthread_create(&newThread, )
-}
-
-void *handle_request(void *pclientSocket) {
-  MySocket *client = (MySocket*)pclientSocket;
-  free(pclientSocket);
+void *handle_request(void *pclient) {
+  MySocket *client = (MySocket*)pclient;
+  free(pclient);
   HTTPRequest *request = new HTTPRequest(client, PORT);
   HTTPResponse *response = new HTTPResponse();
   stringstream payload;
@@ -126,6 +155,23 @@ void *handle_request(void *pclientSocket) {
   return NULL; // MAY NEED TO DELETE
 }
 
+// FIFO consumer function
+// handle first request in buffer
+void *handle_threads(void* arg){
+  while(true){
+    MySocket* pclient;
+    dthread_mutex_lock(&mutex);
+    if ((pclient = dequeue()) == NULL){
+      dthread_cond_wait(&conditionVar, &mutex);
+    }
+    dthread_mutex_unlock(&mutex);
+
+    if (pclient!= NULL){
+      handle_request(pclient);
+    }
+  }
+}
+
 int main(int argc, char *argv[]) {
 
   signal(SIGPIPE, SIG_IGN);
@@ -163,16 +209,34 @@ int main(int argc, char *argv[]) {
   MyServerSocket *server = new MyServerSocket(PORT);
   MySocket *client;
 
-  services.push_back(new FileService(BASEDIR));
-  
-  while(true) {
+  pthread_t newThread[THREAD_POOL_SIZE];
+  for (int i = 0; i < THREAD_POOL_SIZE; i++){
+    // from while true loop in main
     sync_print("waiting_to_accept", "");
     client = server->accept();
     sync_print("client_accepted", "");
-    handle_request(client);
-    pthread_t newThread;
-    void *pclient = malloc(sizeof(int));
-    *pclient = client;
-    dthread_create(&newThread, NULL, handle_request, pclient);
+    if (THREAD_POOL_SIZE == 1){
+        sync_print("waiting_to_accept", "");
+        client = server->accept();
+        sync_print("client_accepted", "");
+        handle_request(client);
+    }
+    dthread_create(&newThread[i], NULL, &handle_threads, NULL);
   }
+  services.push_back(new FileService(BASEDIR));
+  dthread_mutex_lock(&mutex);
+  enqueue(client);
+  dthread_cond_signal(&conditionVar);
+  dthread_mutex_unlock(&mutex);
+  // while(true) {
+  //   sync_print("waiting_to_accept", "");
+  //   client = server->accept();
+  //   sync_print("client_accepted", "");
+  //   handle_request(client);
+  //   pthread_t newThread;
+    // MySocket *pclient = (void*)malloc(sizeof(int));
+    // *pclient = client;
+    
+  //   dthread_create(&newThread, NULL, handle_request, pclient);
+  // }
 }
