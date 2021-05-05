@@ -46,6 +46,11 @@ void FileService::get(HTTPRequest *request, HTTPResponse *response) {
     }
     response->setBody(fileContents);
   }
+  // if not requests are found send error
+  std::size_t backTrackFoundInPath = path.find("..");
+  if(backTrackFoundInPath != std::string::npos){
+    response->setStatus(403);
+  }
 }
 
 string FileService::readFile(string path) {

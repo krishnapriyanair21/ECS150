@@ -108,7 +108,7 @@ void *handle_request(MySocket *client) {
   sync_print("close_connection", payload.str());
   client->close();
   delete client;
-  return NULL; // MAY NEED TO DELETE
+  return NULL; 
 }
 
 // FIFO function to send to handle_request
@@ -122,6 +122,7 @@ void *handle_threads(void* arg){
     MySocket *client = bufferQueue.front(); // set client
     bufferQueue.pop_front(); // remove first element
 
+    // signal conditionalVar in main
     dthread_cond_signal(&room);
     dthread_mutex_unlock(&lockThread);
 
@@ -188,6 +189,7 @@ int main(int argc, char *argv[]) {
     // there is room 
     bufferQueue.push_back(client);
 
+    //signal FIFO function 
     dthread_cond_signal(&requests);
     dthread_mutex_unlock(&lockThread);
   }
