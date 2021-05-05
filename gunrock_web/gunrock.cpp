@@ -23,55 +23,15 @@ using namespace std;
 
 int PORT = 8080;
 int THREAD_POOL_SIZE = 1;
-int BUFFER_SIZE = 1;
+unsigned int BUFFER_SIZE = 1;
 string BASEDIR = "static";
 string SCHEDALG = "FIFO";
 string LOGFILE = "/dev/null";
 
 pthread_mutex_t lockThread = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t roomForThread, requirements = PTHREAD_COND_INITIALIZER;
-
+pthread_cond_t requests, room  = PTHREAD_COND_INITIALIZER;
+deque<MySocket*> bufferQueue;
 vector<HttpService *> services;
-
-// define queue structs and create buffer queue
-struct node{
-  struct node* next;
-  MySocket *clientSocket;
-};
-typedef struct node node_t;
-struct queue{
-  node_t* head = NULL;
-  node_t* tail = NULL;
-}
-typedef struct queue queue_t;
-
-queue_t<MySocket*> buff[BUFFER_SIZE];
-
-void enqueue(MySocket *clientSocket){
-  node_t* nn = new node_t;
-  nn->clientSocket = clientSocket;
-  if (tail== NULL){
-    head = nn;
-  } else{
-    tail->next = nn;
-  }
-  tail = nn;
-}
-
-MySocket* dequeue(){
-  if (head == NULL){
-    return NULL;
-  } else{
-    MySocket* returnVal = head->clientSocket;
-    node_t* tempToDelete = head;
-    head = head->next;
-    if (head == NULL){
-      tail = NULL;
-    }
-    free(tempToDelete);
-    return returnVal;
-  }
-}
 
 HttpService *find_service(HTTPRequest *request) {
    // find a service that is registered for this path prefix
@@ -80,10 +40,8 @@ HttpService *find_service(HTTPRequest *request) {
       return services[idx];
     }
   }
-
   return NULL;
 }
-
 
 void invoke_service_method(HttpService *service, HTTPRequest *request, HTTPResponse *response) {
   stringstream payload;
@@ -108,9 +66,7 @@ void invoke_service_method(HttpService *service, HTTPRequest *request, HTTPRespo
   }
 }
 
-void *handle_request(void *pclient) {
-  MySocket *client = (MySocket*)pclient;
-  free(pclient);
+void *handle_request(MySocket *client) {
   HTTPRequest *request = new HTTPRequest(client, PORT);
   HTTPResponse *response = new HTTPResponse();
   stringstream payload;
@@ -155,19 +111,22 @@ void *handle_request(void *pclient) {
   return NULL; // MAY NEED TO DELETE
 }
 
-// FIFO consumer function
-// handle first request in buffer
+// FIFO function to send to handle_request
 void *handle_threads(void* arg){
   while(true){
-    MySocket* pclient;
-    dthread_mutex_lock(&mutex);
-    if ((pclient = dequeue()) == NULL){
-      dthread_cond_wait(&conditionVar, &mutex);
+    dthread_mutex_lock(&lockThread);
+    while(bufferQueue.size() == 0){
+      dthread_cond_wait(&requests, &lockThread);
     }
-    dthread_mutex_unlock(&mutex);
+    // there is a request
+    MySocket *client = bufferQueue.front(); // set client
+    bufferQueue.pop_front(); // remove first element
 
-    if (pclient!= NULL){
-      handle_request(pclient);
+    dthread_cond_signal(&room);
+    dthread_mutex_unlock(&lockThread);
+
+    if (client){
+      handle_request(client);
     }
   }
 }
@@ -209,34 +168,27 @@ int main(int argc, char *argv[]) {
   MyServerSocket *server = new MyServerSocket(PORT);
   MySocket *client;
 
-  pthread_t newThread[THREAD_POOL_SIZE];
+  
+  services.push_back(new FileService(BASEDIR));
+  // create new threads
+  pthread_t  *newThread = new pthread_t[THREAD_POOL_SIZE];
   for (int i = 0; i < THREAD_POOL_SIZE; i++){
-    // from while true loop in main
+    dthread_create(&newThread[i], NULL, handle_threads, NULL);
+  }
+
+  // push requests to queue
+  while(true) {
     sync_print("waiting_to_accept", "");
     client = server->accept();
     sync_print("client_accepted", "");
-    if (THREAD_POOL_SIZE == 1){
-        sync_print("waiting_to_accept", "");
-        client = server->accept();
-        sync_print("client_accepted", "");
-        handle_request(client);
+    dthread_mutex_lock(&lockThread);
+    while(bufferQueue.size() == BUFFER_SIZE){
+      dthread_cond_wait(&room, &lockThread);
     }
-    dthread_create(&newThread[i], NULL, &handle_threads, NULL);
+    // there is room 
+    bufferQueue.push_back(client);
+
+    dthread_cond_signal(&requests);
+    dthread_mutex_unlock(&lockThread);
   }
-  services.push_back(new FileService(BASEDIR));
-  dthread_mutex_lock(&mutex);
-  enqueue(client);
-  dthread_cond_signal(&conditionVar);
-  dthread_mutex_unlock(&mutex);
-  // while(true) {
-  //   sync_print("waiting_to_accept", "");
-  //   client = server->accept();
-  //   sync_print("client_accepted", "");
-  //   handle_request(client);
-  //   pthread_t newThread;
-    // MySocket *pclient = (void*)malloc(sizeof(int));
-    // *pclient = client;
-    
-  //   dthread_create(&newThread, NULL, handle_request, pclient);
-  // }
 }
