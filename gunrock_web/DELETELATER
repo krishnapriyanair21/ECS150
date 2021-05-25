@@ -1,0 +1,32 @@
+cond_var hasReqs, hasRoom
+mutex_lock masterLock
+queue<MySocket*> buffer[BUFFER_SIZE]
+
+main:
+    pthread master // master thread
+    pthread_create(master, producer) // producer func. that creates pool of worker threads
+producer:
+    for i in NUM_OF_THREADS:
+        pthread worker // worker thread
+        pthread_create(worker, consumer) // initially they'll all go into cond var queue...(need array)
+    while (true): // continually listening for requests (if possible)
+        MySocket* client
+        client = server -> accept()
+        lock(masterLock) // modifying shared var
+        while (buffer.size() == BUFFER_SIZE): // while full 
+            pthread_wait(hasRoom, masterLock)
+        // if buffer.size() != BUFFER_SIZE (we have room)
+        buffer.push(client)
+        signal(hasReqs)
+        unlock(masterLock)
+consumer:
+    while (true): // continually trying to service requests (if possible)
+        lock(masterLock)
+        while (buffer.size() == 0): // while empty 
+            pthread_wait(hasReqs, masterLock)
+        // if buffer.size() != 0 (we have reqs)
+        MySocket* client
+        client = buffer.pop()
+        signal(hasRoom)
+        unlock(masterLock)
+        handle_request(client); // maybe have this happen after unlocking?
