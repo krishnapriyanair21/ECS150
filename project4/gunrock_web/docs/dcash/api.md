@@ -79,6 +79,18 @@ response. Typical APIs would normally return an error code and error
 message in a JSON object, but for this project we're going to keep
 things simple.
 
+### Operating on users and their data
+
+In general, for API calls you should only be able to operate on the
+data that a particular user owns. For the `/users/*` and `/deposits`
+endpoints you should only be able to access data associated directly
+with the authenticated account, and you should only be able to delete
+`auth_token` objects for the user who is currently logged in.
+
+The one exception to operating exclusively on the current user's data
+is when you transfer funds, your transfer API implementation will
+increase the balance for another user as a part of your implementation.
+
 ### POST `/auth-tokens`
 
 If the username doesn't exist this call will create a new user, and if
@@ -159,8 +171,8 @@ No arguments.
 ### POST `/transfers`
 
 Transfers money from your account to another user. You must make sure
-that there aren't any negative balances and that the `to_email`
-address exists for this API call to succeed.
+that there aren't any negative balances and that the `to` username
+exists for this API call to succeed.
 
 #### Arguments
 
@@ -198,7 +210,7 @@ tokens](https://stripe.com/docs/testing#cards), (e.g., `tok_visa` and
 
 | Argument     | Description                                      |
 |--------------|--------------------------------------------------|
-| amount       | The amount to charge, in cents                   |
+| amount       | The amount to charge, in cents (must be >= 50)   |
 | stripe_token | The Stripe token for the card you want to charge |
 
 #### Response object
