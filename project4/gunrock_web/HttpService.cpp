@@ -14,6 +14,7 @@ HttpService::HttpService(string pathPrefix) {
 
 User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
   // TODO: implement this function
+  
   return NULL;
 }
 
