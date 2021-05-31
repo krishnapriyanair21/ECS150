@@ -21,6 +21,11 @@
 using namespace std;
 using namespace rapidjson;
 
+// Error-checking:
+// user_id doesn't exist in the users database
+// user_id doesn't match the authenticated user
+// missing email argument
+// email is in the wrong format?
 AccountService::AccountService() : HttpService("/users") {
   
 }

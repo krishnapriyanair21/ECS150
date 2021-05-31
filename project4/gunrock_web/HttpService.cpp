@@ -13,8 +13,13 @@ HttpService::HttpService(string pathPrefix) {
 }
 
 User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
+  if (){
+    
+  }
   // TODO: implement this function
-  
+  // Error Checking: 
+  // header doesn't have an auth_token
+  // auth_token doesn't exist in the auth_tokens database
   return NULL;
 }
 

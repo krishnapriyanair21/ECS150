@@ -24,6 +24,12 @@
 using namespace rapidjson;
 using namespace std;
 
+// Error-checking:
+// - missing amount or stripe_token arguments
+// - deposit amount is negative
+// - charge amount less than 50 cents
+// - potential stripe API errors?
+
 DepositService::DepositService() : HttpService("/deposits") { }
 
 void DepositService::post(HTTPRequest *request, HTTPResponse *response) {

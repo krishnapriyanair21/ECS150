@@ -21,6 +21,12 @@
 using namespace rapidjson;
 using namespace std;
 
+// Error-checking:
+// missing amount or to arguments
+// transfer amount is negative
+// transfer amount is greater than balance
+// 'to' user doesn't exist in the users database
+
 TransferService::TransferService() : HttpService("/transfers") { }
 
 

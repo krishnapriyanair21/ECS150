@@ -22,6 +22,10 @@
 using namespace std;
 using namespace rapidjson;
 
+// Error checking:
+// missing username or password arguments
+// username is not all lowercase
+// password doesn't match user in the users database
 AuthService::AuthService() : HttpService("/auth-tokens") {
   
 }
