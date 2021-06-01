@@ -13,7 +13,11 @@ HttpService::HttpService(string pathPrefix) {
 }
 
 User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
-  request->getAuthToken(); // go to definition for more functions
+   // TODO: implement this function
+  // Error Checking:
+  // header doesn't have an auth_token
+  // auth_token doesn't exist in the auth_tokens database
+  cout << request->getRequest() << endl;
   return NULL;
 }
 
