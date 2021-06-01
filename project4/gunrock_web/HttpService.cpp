@@ -13,11 +13,7 @@ HttpService::HttpService(string pathPrefix) {
 }
 
 User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
-  cout<<request<<endl;
-  // TODO: implement this function
-  // Error Checking: 
-  // header doesn't have an auth_token
-  // auth_token doesn't exist in the auth_tokens database
+  request->getAuthToken(); // go to definition for more functions
   return NULL;
 }
 
@@ -41,7 +37,6 @@ void HttpService::put(HTTPRequest *request, HTTPResponse *response) {
 }
 
 void HttpService::post(HTTPRequest *request, HTTPResponse *response) {
-  getAuthenticatedUser(request);
   cout << "POST " << request->getPath() << endl;
   throw ClientError::methodNotAllowed();
 }
