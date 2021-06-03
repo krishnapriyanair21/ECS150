@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <map>
 
 #include "HttpService.h"
 #include "ClientError.h"
@@ -13,16 +14,12 @@ HttpService::HttpService(string pathPrefix) {
 }
 
 User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
-  // if (!(request->hasAuthToken())){ // if request doesn't have auth token, throw error
-  //   throw ClientError::badRequest();
-  // }
-  // string currAuthToken = request->getAuthToken();
-  // User *foundUser = m_db->auth_tokens[currAuthToken];
-  // string currUsername = foundUser->username;
-  
-  // if (m_db->auth_tokens.find(currUsername));
-  // if ()
-
+  // check for matching IDs
+  if (request->hasAuthToken()){
+    string currToken = request->getAuthToken();
+    User *foundUser = m_db->auth_tokens[currToken];
+    return foundUser; // CHECK IF CORRECT!!!!!!!!!
+  }
   return NULL;
 }
 
