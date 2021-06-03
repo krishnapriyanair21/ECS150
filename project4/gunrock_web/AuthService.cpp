@@ -31,9 +31,23 @@ AuthService::AuthService() : HttpService("/auth-tokens") {
 }
 
 void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
-
+    User *userExists = getAuthenticatedUser(request);
+    if (userExists == NULL){
+        User *newUser = new User;
+        newUser->user_id = StringUtils::createUserId();
+        
+        newUser->username = request->getAuthToken();
+        // newUser->password = request->getParams(); // change
+        /// if user does not exist, create user?
+        response->setStatus(201);
+    }
+    /// set status to 201
 }
 
 void AuthService::del(HTTPRequest *request, HTTPResponse *response) {
-
+    if (request->)
+    // check head token == user token
+    // find URL token USer pointer in database
+    // compare to getAutheticatedUser
+    // if match delete URL pointer 
 }

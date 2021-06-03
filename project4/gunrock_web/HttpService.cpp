@@ -13,11 +13,16 @@ HttpService::HttpService(string pathPrefix) {
 }
 
 User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
-  string currAuthToken = request->getAuthToken();
-  User *foundUser = m_db->auth_tokens(currAuthToken);
-  if (!(request->hasAuthToken())){ // if request doesn't have auth token, throw error
-    throw ClientError::badRequest();
-  }
+  // if (!(request->hasAuthToken())){ // if request doesn't have auth token, throw error
+  //   throw ClientError::badRequest();
+  // }
+  // string currAuthToken = request->getAuthToken();
+  // User *foundUser = m_db->auth_tokens[currAuthToken];
+  // string currUsername = foundUser->username;
+  
+  // if (m_db->auth_tokens.find(currUsername));
+  // if ()
+
   return NULL;
 }
 
