@@ -14,11 +14,22 @@ HttpService::HttpService(string pathPrefix) {
 }
 
 User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
+  WwwFormEncodedDict fullRequest;
+  string username;
+  User *returnUser;
   // check for matching IDs
-  if (request->hasAuthToken()){
-    string currToken = request->getAuthToken();
-    User *foundUser = m_db->auth_tokens[currToken];
-    return foundUser; // CHECK IF CORRECT!!!!!!!!!
+  if(request->hasAuthToken()){
+    // do something
+  }
+  else{
+    fullRequest = request->formEncodedBody();
+    username = fullRequest.get("username");
+    // ITERATOR DOES NOT WORK
+    for(m_db->users<string, User*>::iterator iter = m_db->users.begin(); iter != m_db->users.end(); ++iter){ // loop through database
+      if(m_db->users.find(username)){ // if username found
+        returnUser->second; // set return pointer to User
+      }
+    }
   }
   return NULL;
 }

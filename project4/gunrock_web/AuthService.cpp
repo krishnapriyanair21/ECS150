@@ -48,23 +48,27 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
         fullRequest = request->formEncodedBody();
         username = fullRequest.get("username");
         password = fullRequest.get("password");
+
         // add to User obj
         newUser->username = username;
         newUser->password = password;
 
-        // push to database 
-
         // create response object
         currUserID = newUser->user_id;
         currUserToken = StringUtils::createAuthToken();
-       // m_db->auth_tokens.insert<currUserToken, newUser>;  // INSERT TOken and user into map
+
+        // push to database 
+        m_db->auth_tokens.insert(std::pair <string, User*>(currUserToken, newUser));
+        m_db->users.insert(std::pair <string, User*>(username, newUser));
+
+        //response object
         rapidJSONResponse(currUserToken, currUserID, response);
         response->setStatus(201);
     }
     else{
         // existing user
         currUserID = userExists->user_id;
-        currUserToken = "SEARCH"; //request->getAuthToken();
+        currUserToken = request->getAuthToken();
         rapidJSONResponse(currUserToken, currUserID, response);
         response->setStatus(200);
     }
