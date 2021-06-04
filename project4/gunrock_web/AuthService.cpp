@@ -48,7 +48,6 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
         // add to User obj
         newUser->username = username;
         newUser->password = password;
-        cout << "username / password in post: " << username << " / " <<password<<endl;
         // error checking
         error = errorChecks(username, password, response);
         if (error!= 0){ 
@@ -113,24 +112,6 @@ void AuthService::del(HTTPRequest *request, HTTPResponse *response) {
             response->setStatus(400);
             throw ClientError::badRequest();
         }
-    //     // use getAuthenticatedUser
-        // for(it = m_db->auth_tokens.begin(); it != m_db->auth_tokens.end(); ++it){ // loop through database
-        //     if (m_db->users.find(deleteAuthToken) != m_db->users.end()){
-        //         deleteUser = it ->second;
-        //     }
-    //         if (m_db->users.find(checkAuthToken) != m_db->users.end()){
-    //             checkUser = it ->second;
-    //         }
-    //     }
-    //     // check User from this token and deleteAuthToken have same id (if yes DELETE)
-    //     cout << checkUser->user_id << " check user ID" <<endl;
-    //     cout << deleteUser->user_id << " delete USer ID" <<endl;
-    //     if (checkUser->user_id == deleteUser->user_id){
-    //         m_db->auth_tokens.erase(deleteAuthToken);
-    //         response->setStatus(200);
-    //     }else{
-    //         response->setStatus(400);
-    //     }
     }else{
         throw ClientError::badRequest(); // no token in delete call
     }

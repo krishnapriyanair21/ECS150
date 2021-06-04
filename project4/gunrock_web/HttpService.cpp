@@ -21,11 +21,9 @@ User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
   std::map<string, User*>::iterator iter;
 
   if(request->hasAuthToken()){  // with token
-    cout <<" has auth token"<<endl;
     authToken = request->getAuthToken();
     for(iter = m_db->auth_tokens.begin(); iter != m_db->auth_tokens.end(); ++iter){ // loop through database
       if (m_db->auth_tokens.find(authToken) != m_db->auth_tokens.end()){
-        cout << "found user" <<endl;
         returnUser = iter->second;
       }
     }
