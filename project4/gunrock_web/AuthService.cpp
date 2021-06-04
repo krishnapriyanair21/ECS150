@@ -23,6 +23,7 @@ using namespace std;
 using namespace rapidjson;
 
 void rapidJSONResponse(string currUserToken, string currUserID, HTTPResponse *response);
+int errorChecks(string username, string password, HTTPResponse *response, User *user = NULL);
 
 // Error checking:
 // missing username or password arguments
@@ -39,31 +40,37 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
     WwwFormEncodedDict fullRequest;
     string username;
     string password;
+    int error = 0;
     
-
+    // get username and password
+    fullRequest = request->formEncodedBody();
+    username = fullRequest.get("username");
+    password = fullRequest.get("password");
     if (userExists == NULL){
         User *newUser = new User;
         newUser->user_id = StringUtils::createUserId();
-        // get username and password
-        fullRequest = request->formEncodedBody();
-        username = fullRequest.get("username");
-        password = fullRequest.get("password");
-
+        
         // add to User obj
         newUser->username = username;
         newUser->password = password;
 
-        // create response object
-        currUserID = newUser->user_id;
-        currUserToken = StringUtils::createAuthToken();
+        // error checking
+        error = errorChecks(username, password, response);
+        if (error!= 0){ 
+            response->setStatus(error); 
+        } else {
+            // create response object
+            currUserID = newUser->user_id;
+            currUserToken = StringUtils::createAuthToken();
 
-        // push to database 
-        m_db->auth_tokens.insert(std::pair <string, User*>(currUserToken, newUser));
-        m_db->users.insert(std::pair <string, User*>(username, newUser));
+            // push to database 
+            m_db->auth_tokens.insert(std::pair <string, User*>(currUserToken, newUser));
+            m_db->users.insert(std::pair <string, User*>(username, newUser));
 
-        //response object
-        rapidJSONResponse(currUserToken, currUserID, response);
-        response->setStatus(201);
+            //response object
+            rapidJSONResponse(currUserToken, currUserID, response);
+            response->setStatus(201);
+        }
     }
     else{
         // existing user
@@ -74,8 +81,15 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
             // pull actual auth_token then update currUserToken
             currUserToken = request->getBody();
         }
-        rapidJSONResponse(currUserToken, currUserID, response);
-        response->setStatus(200);
+        // Error checks
+        error = errorChecks(username, password, response, userExists);
+        if (error != 0) { 
+            response->setStatus(error); 
+        }else {
+            // response object
+            rapidJSONResponse(currUserToken, currUserID, response);
+            response->setStatus(200);
+        }
     }
 }
 
@@ -107,4 +121,28 @@ void rapidJSONResponse(string currUserToken, string currUserID, HTTPResponse *re
     // set the return object
     response->setContentType("application/json");
     response->setBody(buffer.GetString() + string("\n"));
+}
+
+int errorChecks(string username, string password, HTTPResponse *response, User *user){
+    // missing arguements
+    if ((username == "") || (password == "")){
+        return 400;
+    }
+    // username lowercase
+    unsigned size = username.size();
+    char tempUsername[size]; 
+    strcpy(tempUsername, username.c_str());
+    for (unsigned i = 0; i < size; i++){
+        if(!islower(tempUsername[i])){
+            return 400;
+        }
+    }
+    
+    // password in database
+    if (user){
+        if (user->password != password){
+            return 403;
+        }
+    }
+    return 0; // no error
 }
