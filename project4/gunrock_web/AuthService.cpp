@@ -69,11 +69,7 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
     else{
         // existing user
         currUserID = userExists->user_id;
-        // if (request->hasAuthToken()){
-        //     currUserToken = request->getAuthToken();
-        // }else{
-            currUserToken = StringUtils::createAuthToken();
-        // }
+        currUserToken = StringUtils::createAuthToken();
         // Error checks
         error = errorChecks(username, password, response, userExists);
         if (error != 0) { 
@@ -88,7 +84,6 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
     }
 }
 
-/// Not Tested 
 void AuthService::del(HTTPRequest *request, HTTPResponse *response) {
     std::map<string,User*>::iterator it;
     string deleteAuthToken;
@@ -101,7 +96,7 @@ void AuthService::del(HTTPRequest *request, HTTPResponse *response) {
         // // check if user_id is correct
         checkUser = getAuthenticatedUser(request);
         for(it = m_db->auth_tokens.begin(); it != m_db->auth_tokens.end(); ++it){ // loop through database
-            if (m_db->auth_tokens.find(deleteAuthToken) != m_db->users.end()){
+            if (it->first == deleteAuthToken){
                 deleteUser = it -> second;
             }
         }

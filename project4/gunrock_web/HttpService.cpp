@@ -22,8 +22,10 @@ User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
 
   if(request->hasAuthToken()){  // with token
     authToken = request->getAuthToken();
+    cout << authToken << " is authToken" <<endl;
     for(iter = m_db->auth_tokens.begin(); iter != m_db->auth_tokens.end(); ++iter){ // loop through database
-      if (m_db->auth_tokens.find(authToken) != m_db->auth_tokens.end()){
+      if (iter->first == authToken){ 
+        cout << iter->second->username << " is found" <<endl;
         returnUser = iter->second;
       }
     }
@@ -34,7 +36,7 @@ User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
     fullRequest = request->formEncodedBody();
     username = fullRequest.get("username");
     for(iter = m_db->users.begin(); iter != m_db->users.end(); ++iter){ // loop through database
-      if (m_db->users.find(username) != m_db->users.end()){
+      if (iter->first == username){
         returnUser = iter->second;
         return returnUser;
       }

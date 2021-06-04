@@ -42,7 +42,7 @@ void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
         string getAuthToken = path.back(); // last in parameter list
         // find user with getAuthToken in auth_token database
         for(it = m_db->auth_tokens.begin(); it != m_db->auth_tokens.end(); ++it){ // loop through database
-            if (m_db->auth_tokens.find(getAuthToken) != m_db->users.end()){
+            if (it->first == getAuthToken){
                 currUser = it -> second;
                 break;
             }
