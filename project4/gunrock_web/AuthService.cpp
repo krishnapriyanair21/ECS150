@@ -27,7 +27,7 @@ void rapidJSONResponse(string currUserToken, string currUserID, HTTPResponse *re
 // Error checking:
 // missing username or password arguments
 // username is not all lowercase
-// password doesn't match user in the users database
+// password doesn't match user in the users database (setStatus->(403))
 AuthService::AuthService() : HttpService("/auth-tokens") {
   
 }
@@ -68,7 +68,12 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
     else{
         // existing user
         currUserID = userExists->user_id;
-        currUserToken = request->getAuthToken();
+        if (request->hasAuthToken()){
+            currUserToken = request->getAuthToken();
+        }else{
+            // pull actual auth_token then update currUserToken
+            currUserToken = request->getBody();
+        }
         rapidJSONResponse(currUserToken, currUserID, response);
         response->setStatus(200);
     }

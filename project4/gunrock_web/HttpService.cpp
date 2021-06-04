@@ -18,16 +18,16 @@ User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
   string username;
   User *returnUser;
   // check for matching IDs
-  if(request->hasAuthToken()){
-    // do something
+  if(request->hasAuthToken()){ 
+    // find token in database and use User pointer to make sure username and password are correct?
   }
   else{
     fullRequest = request->formEncodedBody();
     username = fullRequest.get("username");
-    // ITERATOR DOES NOT WORK
-    for(m_db->users<string, User*>::iterator iter = m_db->users.begin(); iter != m_db->users.end(); ++iter){ // loop through database
-      if(m_db->users.find(username)){ // if username found
-        returnUser->second; // set return pointer to User
+    for(std::map<string, User*>::iterator iter = m_db->users.begin(); iter != m_db->users.end(); ++iter){ // loop through database
+      if (m_db->users.find(username) != m_db->users.end()){
+        returnUser = iter->second;
+        return returnUser;
       }
     }
   }
