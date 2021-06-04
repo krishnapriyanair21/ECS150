@@ -25,10 +25,6 @@ using namespace rapidjson;
 void rapidJSONResponse(string currUserToken, string currUserID, HTTPResponse *response);
 int errorChecks(string username, string password, HTTPResponse *response, User *user = NULL);
 
-// Error checking:
-// missing username or password arguments
-// username is not all lowercase
-// password doesn't match user in the users database (setStatus->(403))
 AuthService::AuthService() : HttpService("/auth-tokens") {
   
 }
@@ -49,7 +45,9 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
     if (userExists == NULL){
         User *newUser = new User;
         newUser->user_id = StringUtils::createUserId();
-        
+        // set defaults
+        newUser->balance = 0;
+        newUser->email = "";
         // add to User obj
         newUser->username = username;
         newUser->password = password;
@@ -78,14 +76,15 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
         if (request->hasAuthToken()){
             currUserToken = request->getAuthToken();
         }else{
-            // pull actual auth_token then update currUserToken
-            currUserToken = request->getBody();
+            currUserToken = StringUtils::createAuthToken();
         }
         // Error checks
         error = errorChecks(username, password, response, userExists);
         if (error != 0) { 
             response->setStatus(error); 
         }else {
+            // push to database 
+            m_db->auth_tokens.insert(std::pair <string, User*>(currUserToken, userExists));
             // response object
             rapidJSONResponse(currUserToken, currUserID, response);
             response->setStatus(200);
@@ -93,12 +92,38 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
     }
 }
 
+/// Not Working properly???
 void AuthService::del(HTTPRequest *request, HTTPResponse *response) {
-    // if (request->)
-    // check head token == user token
-    // find URL token USer pointer in database
-    // compare to getAutheticatedUser
-    // if match delete URL pointer 
+    std::map<string,User*>::iterator it;
+    string deleteAuthToken;
+    string checkAuthToken;
+    User *deleteUser;
+    User *checkUser;
+    if (request->hasAuthToken()){
+        vector<string> path = request->getPathComponents();
+        deleteAuthToken = path.back(); // last in parameter list
+        // check if user_id is correct
+        checkAuthToken = request->getAuthToken(); 
+
+        // use getAuthenticatedUser
+        for(it = m_db->auth_tokens.begin(); it != m_db->auth_tokens.end(); ++it){ // loop through database
+            if (m_db->users.find(deleteAuthToken) != m_db->users.end()){
+                deleteUser = it ->second;
+            }
+            if (m_db->users.find(checkAuthToken) != m_db->users.end()){
+                checkUser = it ->second;
+            }
+        }
+        // check User from this token and deleteAuthToken have same id (if yes DELETE)
+        cout << checkUser->user_id << " check user ID" <<endl;
+        cout << deleteUser->user_id << " delete USer ID" <<endl;
+        if (checkUser->user_id == deleteUser->user_id){
+            m_db->auth_tokens.erase(deleteAuthToken);
+            response->setStatus(200);
+        }else{
+            response->setStatus(400);
+        }
+    }
 }
 
 void rapidJSONResponse(string currUserToken, string currUserID, HTTPResponse *response){
@@ -126,6 +151,7 @@ void rapidJSONResponse(string currUserToken, string currUserID, HTTPResponse *re
 int errorChecks(string username, string password, HTTPResponse *response, User *user){
     // missing arguements
     if ((username == "") || (password == "")){
+        throw ClientError::badRequest();
         return 400;
     }
     // username lowercase
@@ -134,13 +160,14 @@ int errorChecks(string username, string password, HTTPResponse *response, User *
     strcpy(tempUsername, username.c_str());
     for (unsigned i = 0; i < size; i++){
         if(!islower(tempUsername[i])){
+            throw ClientError::badRequest();
             return 400;
         }
     }
-    
     // password in database
     if (user){
         if (user->password != password){
+            throw ClientError::forbidden();
             return 403;
         }
     }

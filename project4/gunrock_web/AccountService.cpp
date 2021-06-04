@@ -31,9 +31,15 @@ AccountService::AccountService() : HttpService("/users") {
 }
 
 void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
-
+    
 }
 
 void AccountService::put(HTTPRequest *request, HTTPResponse *response) {
+    // Updates the information for a user
+    // given email
+    // response = email and balance
+
+    // WwwFormEncodedDict fullRequest = request->formEncodedBody();
+    // string email = fullRequest.get("email");
 
 }
