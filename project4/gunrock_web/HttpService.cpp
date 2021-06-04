@@ -25,7 +25,6 @@ User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
     cout << authToken << " is authToken" <<endl;
     for(iter = m_db->auth_tokens.begin(); iter != m_db->auth_tokens.end(); ++iter){ // loop through database
       if (iter->first == authToken){ 
-        cout << iter->second->username << " is found" <<endl;
         returnUser = iter->second;
       }
     }

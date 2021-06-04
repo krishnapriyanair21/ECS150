@@ -47,7 +47,7 @@ void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
                 break;
             }
         }
-        if (currUser == requestUser){
+        if (currUser == requestUser){ // ISSUE HERE (if get before put)
             email = currUser->email;
             balance = currUser->balance;
             rapidJSONResponse(email, balance, response);
@@ -63,22 +63,38 @@ void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
 }
 
 void AccountService::put(HTTPRequest *request, HTTPResponse *response) {
-    /// STILL NEEDS ERROR CHECKS
+    /// create error check function?
     int balance;
     User *currUser = getAuthenticatedUser(request);
+    User *checkUser;
+    string checkAuthToken;
+    std::map<string, User*>::iterator iter;
+
     if (request->hasAuthToken()){
         // pull email, balance, and user from request
         WwwFormEncodedDict fullRequest = request->formEncodedBody();
         string email = fullRequest.get("email");
+        checkAuthToken = request->getAuthToken();
         if (email == ""){  // no email
             throw ClientError::badRequest();
             response-> setStatus(400);
         }else{
-            currUser->email = email;
-            balance = currUser->balance;
-            // set up response object
-            rapidJSONResponse(email, balance, response);
-            response->setStatus(200);
+            for(iter = m_db->auth_tokens.begin(); iter != m_db->auth_tokens.end(); ++iter){ // loop through database
+                if (iter->first == checkAuthToken){ 
+                    checkUser = iter->second;
+                }
+            }
+            if (checkUser == currUser){
+                currUser->email = email;
+                balance = currUser->balance;
+                // set up response object
+                rapidJSONResponse(email, balance, response);
+                response->setStatus(200);
+            }
+            else{ // auth_token is not for correct user_id
+                throw ClientError::unauthorized();
+                response->setStatus(401);
+            }
         }
     }else{ // no auth token
         response->setStatus(400);
