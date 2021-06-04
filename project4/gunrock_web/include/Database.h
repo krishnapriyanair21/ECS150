@@ -7,11 +7,11 @@
 
 class User {
  public:
-  std::string email;
+  std::string email = "";
   std::string username;
   std::string password;
   std::string user_id;
-  int balance;
+  int balance = 0;
 };
 
 class Transfer {
