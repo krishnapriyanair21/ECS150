@@ -22,6 +22,8 @@
 using namespace std;
 using namespace rapidjson;
 
+void rapidJSONResponse(string currUserToken, string currUserID, HTTPResponse *response);
+
 // Error checking:
 // missing username or password arguments
 // username is not all lowercase
@@ -37,32 +39,56 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
     WwwFormEncodedDict fullRequest;
     string username;
     string password;
+    
+
+    if (userExists == NULL){
+        User *newUser = new User;
+        newUser->user_id = StringUtils::createUserId();
+        // get username and password
+        fullRequest = request->formEncodedBody();
+        username = fullRequest.get("username");
+        password = fullRequest.get("password");
+        // add to User obj
+        newUser->username = username;
+        newUser->password = password;
+
+        // push to database 
+
+        // create response object
+        currUserID = newUser->user_id;
+        currUserToken = StringUtils::createAuthToken();
+       // m_db->auth_tokens.insert<currUserToken, newUser>;  // INSERT TOken and user into map
+        rapidJSONResponse(currUserToken, currUserID, response);
+        response->setStatus(201);
+    }
+    else{
+        // existing user
+        currUserID = userExists->user_id;
+        currUserToken = "SEARCH"; //request->getAuthToken();
+        rapidJSONResponse(currUserToken, currUserID, response);
+        response->setStatus(200);
+    }
+}
+
+void AuthService::del(HTTPRequest *request, HTTPResponse *response) {
+    // if (request->)
+    // check head token == user token
+    // find URL token USer pointer in database
+    // compare to getAutheticatedUser
+    // if match delete URL pointer 
+}
+
+void rapidJSONResponse(string currUserToken, string currUserID, HTTPResponse *response){
     // use rapidjson to create a return object
     Document document;
     Document::AllocatorType& a = document.GetAllocator();
     Value o;
     o.SetObject();
 
-    if (userExists == NULL){
-        User *newUser = new User;
-        newUser->user_id = StringUtils::createUserId();
-        fullRequest = request->formEncodedBody();
-        username = fullRequest.get("username");
-        password = fullRequest.get("password");
-        currUserID = newUser->user_id;
-        currUserToken = StringUtils::createAuthToken();
-        // m_db->auth_tokens.insert<currUserToken, newUser>; INSERT TOken and user into map
-    }
-    else{
-        currUserID = userExists->user_id;
-        currUserToken = "SEARCH"; //request->getAuthToken();
-    }
-    
     // add a key value pair directly to the object
     o.AddMember("auth_token", currUserToken, a);
     o.AddMember("user_id", currUserID, a);
-    o.AddMember("username", username,a);
-    o.AddMember("password", password,a);
+
     // now some rapidjson boilerplate for converting the JSON object to a string
     document.Swap(o);
     StringBuffer buffer;
@@ -72,14 +98,4 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
     // set the return object
     response->setContentType("application/json");
     response->setBody(buffer.GetString() + string("\n"));
-
-    /// set status to 201
-}
-
-void AuthService::del(HTTPRequest *request, HTTPResponse *response) {
-    // if (request->)
-    // check head token == user token
-    // find URL token USer pointer in database
-    // compare to getAutheticatedUser
-    // if match delete URL pointer 
 }
