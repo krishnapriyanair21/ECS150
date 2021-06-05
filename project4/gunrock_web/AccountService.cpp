@@ -33,23 +33,21 @@ AccountService::AccountService() : HttpService("/users") {
 
 void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
     std::map<string,User*>::iterator it;
-    User *currUser; 
+    User *currUserWithID; 
     string email;
     int balance;
     User *requestUser = getAuthenticatedUser(request);
     if (requestUser != NULL){
         vector<string> path = request->getPathComponents();
-        string getAuthToken = path.back(); // last in parameter list
-        // find user with getAuthToken in auth_token database
-        for(it = m_db->auth_tokens.begin(); it != m_db->auth_tokens.end(); ++it){ // loop through database
-            if (it->first == getAuthToken){
-                currUser = it -> second;
-                break;
+        string getUserID = path.back(); // last in parameter list
+        for(it = m_db->users.begin(); it != m_db->users.end(); ++it){ // loop through database
+            if (it->second->user_id == getUserID){ // user_id check
+                currUserWithID = it -> second;
             }
         }
-        if (currUser == requestUser){ // ISSUE HERE (if get before put)
-            email = currUser->email;
-            balance = currUser->balance;
+        if (currUserWithID == requestUser){ // ISSUE HERE (if get before put)
+            email = currUserWithID->email;
+            balance = currUserWithID->balance;
             rapidJSONResponse(email, balance, response);
             response->setStatus(200);
         }
@@ -65,28 +63,29 @@ void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
 void AccountService::put(HTTPRequest *request, HTTPResponse *response) {
     /// create error check function?
     int balance;
-    User *currUser = getAuthenticatedUser(request);
-    User *checkUser;
-    string checkAuthToken;
+    User *currUserwithAuthToken = getAuthenticatedUser(request);
+    User *checkUserwithUserID;
+    string userIDfromURL;
     std::map<string, User*>::iterator iter;
+    vector<string> path = request->getPathComponents();
 
     if (request->hasAuthToken()){
         // pull email, balance, and user from request
         WwwFormEncodedDict fullRequest = request->formEncodedBody();
         string email = fullRequest.get("email");
-        checkAuthToken = request->getAuthToken();
+        userIDfromURL = path.back();
         if (email == ""){  // no email
             throw ClientError::badRequest();
             response-> setStatus(400);
         }else{
-            for(iter = m_db->auth_tokens.begin(); iter != m_db->auth_tokens.end(); ++iter){ // loop through database
-                if (iter->first == checkAuthToken){ 
-                    checkUser = iter->second;
+            for(iter = m_db->users.begin(); iter != m_db->users.end(); ++iter){ // loop through database
+                if (iter->second->user_id == userIDfromURL){  // find user_id in User 
+                    checkUserwithUserID = iter->second;
                 }
             }
-            if (checkUser == currUser){
-                currUser->email = email;
-                balance = currUser->balance;
+            if (checkUserwithUserID == currUserwithAuthToken){
+                currUserwithAuthToken->email = email;
+                balance = currUserwithAuthToken->balance;
                 // set up response object
                 rapidJSONResponse(email, balance, response);
                 response->setStatus(200);
