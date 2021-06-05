@@ -22,13 +22,11 @@ User *HttpService::getAuthenticatedUser(HTTPRequest *request)  {
 
   if(request->hasAuthToken()){  // with token
     authToken = request->getAuthToken();
-    cout << authToken << " is authToken" <<endl;
     for(iter = m_db->auth_tokens.begin(); iter != m_db->auth_tokens.end(); ++iter){ // loop through database
       if (iter->first == authToken){ 
         returnUser = iter->second;
       }
     }
-    cout << "returning " << returnUser->username <<endl;
     return returnUser;
   }
   else{ // with username

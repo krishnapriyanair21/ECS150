@@ -48,10 +48,9 @@ void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
         }
         else{
             throw ClientError::forbidden();
-            response->setStatus(403);
         }
     }else{
-        response->setStatus(400);
+        throw ClientError::badRequest();
     }
 }
 
@@ -70,7 +69,6 @@ void AccountService::put(HTTPRequest *request, HTTPResponse *response) {
         userIDfromURL = path.back();
         if (email == ""){  // no email
             throw ClientError::badRequest();
-            response-> setStatus(400);
         }else{
             for(iter = m_db->users.begin(); iter != m_db->users.end(); ++iter){ // loop through database
                 if (iter->second->user_id == userIDfromURL){  // find user_id in User 
@@ -86,11 +84,10 @@ void AccountService::put(HTTPRequest *request, HTTPResponse *response) {
             }
             else{ // auth_token is not for correct user_id
                 throw ClientError::unauthorized();
-                response->setStatus(401);
             }
         }
     }else{ // no auth token
-        response->setStatus(400);
+        throw ClientError::badRequest();
     }
 }
 

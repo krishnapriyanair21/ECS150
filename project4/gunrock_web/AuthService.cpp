@@ -50,9 +50,7 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
         newUser->password = password;
         // error checking
         error = errorChecks(username, password, response);
-        if (error!= 0){ 
-            response->setStatus(error); 
-        } else {
+        if (error == 0){ // no errors
             // create response object
             currUserID = newUser->user_id;
             currUserToken = StringUtils::createAuthToken();
@@ -72,9 +70,7 @@ void AuthService::post(HTTPRequest *request, HTTPResponse *response) {
         currUserToken = StringUtils::createAuthToken();
         // Error checks
         error = errorChecks(username, password, response, userExists);
-        if (error != 0) { 
-            response->setStatus(error); 
-        }else {
+        if (error == 0) { // no errors
             // push to database 
             m_db->auth_tokens.insert(std::pair <string, User*>(currUserToken, userExists));
             // response object
@@ -104,7 +100,6 @@ void AuthService::del(HTTPRequest *request, HTTPResponse *response) {
             m_db->auth_tokens.erase(deleteAuthToken);
             response->setStatus(200);
         }else{
-            response->setStatus(400);
             throw ClientError::badRequest();
         }
     }else{
@@ -138,7 +133,7 @@ int errorChecks(string username, string password, HTTPResponse *response, User *
     // missing arguements
     if ((username == "") || (password == "")){
         throw ClientError::badRequest();
-        return 400;
+        return 1;
     }
     // username lowercase
     unsigned size = username.size();
@@ -147,14 +142,14 @@ int errorChecks(string username, string password, HTTPResponse *response, User *
     for (unsigned i = 0; i < size; i++){
         if(!islower(tempUsername[i])){
             throw ClientError::badRequest();
-            return 400;
+            return 1;
         }
     }
     // password in database
     if (user){
         if (user->password != password){
             throw ClientError::forbidden();
-            return 403;
+            return 1;
         }
     }
     return 0; // no error
