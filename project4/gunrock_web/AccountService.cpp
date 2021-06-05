@@ -22,11 +22,6 @@ using namespace std;
 using namespace rapidjson;
 void rapidJSONResponse(string email, int balance, HTTPResponse *response);
 
-// Error-checking:
-// user_id doesn't exist in the users database
-// user_id doesn't match the authenticated user
-// missing email argument
-// email is in the wrong format?
 AccountService::AccountService() : HttpService("/users") {
   
 }
@@ -45,7 +40,7 @@ void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
                 currUserWithID = it -> second;
             }
         }
-        if (currUserWithID == requestUser){ // ISSUE HERE (if get before put)
+        if (currUserWithID == requestUser){ 
             email = currUserWithID->email;
             balance = currUserWithID->balance;
             rapidJSONResponse(email, balance, response);
@@ -61,7 +56,6 @@ void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
 }
 
 void AccountService::put(HTTPRequest *request, HTTPResponse *response) {
-    /// create error check function?
     int balance;
     User *currUserwithAuthToken = getAuthenticatedUser(request);
     User *checkUserwithUserID;
