@@ -34,7 +34,6 @@ void DepositService::post(HTTPRequest *request, HTTPResponse *response) {
     if (errorCheck(request, response)){ // no errors
         WwwFormEncodedDict fullRequest = request->formEncodedBody();
         int amount = stoi(fullRequest.get("amount"));
-        amount *= 100; // convert to cents
         string stripeToken = fullRequest.get("stripe_token");
         User *currUser = getAuthenticatedUser(request);
         
@@ -121,7 +120,7 @@ bool errorCheck(HTTPRequest *request, HTTPResponse *response){ // if error retur
     std::string::size_type sz;
     int amount = std::stoi(amountString, &sz); // convert to int (stoi works in CSIF)
 
-    if (amount < 0.5){ // amount is 50 cents (will alter in post)
+    if (amount < 50){ // amount is < 50
         throw ClientError::badRequest();
         return false; 
     }

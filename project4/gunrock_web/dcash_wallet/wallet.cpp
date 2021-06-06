@@ -25,6 +25,7 @@ string PUBLISHABLE_KEY = "";
 
 string auth_token;
 string user_id;
+bool logoutVar;
 
 void errorMessage();
 vector<string> parse(string rawInput);
@@ -60,13 +61,15 @@ int main(int argc, char *argv[]) {
   if (argc == 1){ // interactive
     cout <<"D$>";
     while(getline(cin, rawInput)){
-      parsedInput = parse(rawInput);
-      if (parsedInput.size() == 0){
-        errorMessage(); 
-      }else{
-        executeCmd(parsedInput);
+      if (!logoutVar){
+        parsedInput = parse(rawInput);
+        if (parsedInput.size() == 0){
+          errorMessage(); 
+        }else{
+          executeCmd(parsedInput);
+        }
+        cout<<"D$>";
       }
-      cout<<"D$>";
     }
   }else if (argc == 2){ // batch
     ifstream inputFile;
@@ -79,12 +82,6 @@ int main(int argc, char *argv[]) {
         if (parsedInput.size() == 0){
           errorMessage();
         }else{
-          /// DELETE
-          // int size = parsedInput.size();
-          // for (int l = 0; l < size; l++){
-          //   cout <<parsedInput[l] << " ";
-          // }
-          // cout <<endl;
           executeCmd(parsedInput);
         }
       }
@@ -108,7 +105,10 @@ vector<string> parse(string rawInput){  // stack overflow
 }
 void executeCmd(vector<string> parsedInput){
   if (parsedInput[0] == "logout"){
-    // logout
+    if (parsedInput.size() != 1){
+      errorMessage();
+      return;
+    }
   }else if (parsedInput[0] == "auth"){
     if (parsedInput.size() < 3){
       errorMessage();
@@ -202,7 +202,7 @@ void auth(vector<string> parsedInput){
       response = emailClient.put("/users/" + user_id, encoded_body);
       if (serverError(response)){
         errorMessage();
-        cout <<"email client"<<endl; /// DELETE
+        //cout <<"email client"<<endl; /// DELETE
         return;
       }
 
@@ -235,6 +235,7 @@ void balance(vector<string> parsedInput){
 void deposit(vector<string> parsedInput){
   /// init vars
   int amount = stoi(parsedInput[1]);
+  amount *= 100;
   string cardNumber = parsedInput[2];
   string yearEXP = parsedInput[3];
   string monthEXP = parsedInput[4];
@@ -269,7 +270,7 @@ void deposit(vector<string> parsedInput){
   response = stripeCall.post("/v1/tokens", encoded_body);
   if (serverError(response)){
     errorMessage();
-     // cout <<" deposit post error" <<endl; /// DELETE
+    //cout <<" deposit post error" <<endl; /// DELETE
     return;
   }
   Document *d = response->jsonBody();
@@ -288,11 +289,33 @@ void deposit(vector<string> parsedInput){
 
   if (serverError(response)){
     errorMessage();
-    // cout <<"deposit call to pull balance error"<<endl; /// DELETE
+    //cout <<"deposit call to pull balance error"<<endl; /// DELETE
     return;
   }
 
   Document *f = response->jsonBody();
   int balance = (*f)["balance"].GetInt();
   printBalance(balance);
+}
+
+void send(vector<string> parsedInput){
+  HTTPClientResponse *response;
+  int hostSize = API_SERVER_HOST.length();
+  char host[hostSize + 1];
+  strcpy(host, API_SERVER_HOST.c_str());
+  string sendToUser = parsedInput[1];
+  string amount = parsedInput[2];  
+  // find to user
+  // transfer post
+}
+
+void logout(vector<string> parsedInput){
+  int hostSize = API_SERVER_HOST.length();
+  char host[hostSize + 1];
+  strcpy(host, API_SERVER_HOST.c_str());
+  /// set up client and use del from auth service
+  HttpClient deleteClient(host, API_SERVER_PORT, false);
+  deleteClient.set_header("x-auth-token", auth_token);
+  deleteClient.del("/auth-tokens/"+ auth_token);
+  logoutVar = true;
 }
