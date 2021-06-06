@@ -21,16 +21,37 @@
 using namespace rapidjson;
 using namespace std;
 
-void rapidJSONResponse(vector<Transfer*> transfer, HTTPResponse *response, User *currUser);
+void rapidJSONResponse(vector<Transfer*> transfer, HTTPResponse *response, User *transferFromUser, User *transferToUser);
 bool errorCheck(User* transferFromUser, HTTPRequest *request, HTTPResponse *response, map<string, User*> users);
 
 TransferService::TransferService() : HttpService("/transfers") { }
 
 
 void TransferService::post(HTTPRequest *request, HTTPResponse *response) {
+    std::map<string,User*>::iterator it;
     User *transferFromUser = getAuthenticatedUser(request);
     if (errorCheck(transferFromUser, request,response, m_db->users)){ // no errors
+        WwwFormEncodedDict fullRequest = request->formEncodedBody();
+        int amount = stoi(fullRequest.get("amount"));
+        string userToTransfer = fullRequest.get("to");
 
+        User *transferToUser;
+        for(it = m_db->users.begin(); it != m_db->users.end(); ++it){ // loop through database
+            if (it->first == userToTransfer){
+                transferToUser = it -> second;
+            }
+        }
+        // create transfer obj
+        Transfer *currTransfer = new Transfer();
+        currTransfer->amount = amount;
+        currTransfer->from = transferFromUser;
+        currTransfer->to = transferToUser;
+        
+        // update balances
+        transferFromUser->balance -= amount;
+        transferToUser->balance += amount;
+        m_db->transfers.push_back(currTransfer);
+        rapidJSONResponse(m_db->transfers, response, transferFromUser, transferToUser);
     }
 }
 
@@ -38,24 +59,19 @@ void TransferService::get(HTTPRequest *request, HTTPResponse *response) {
 
 }
 
-void rapidJSONResponse(vector<Transfer*> transfer, HTTPResponse *response, User *currUser){
-    // use rapidjson to create a return object
+void rapidJSONResponse(vector<Transfer*> transfer, HTTPResponse *response, User *transferFromUser, User *transferToUser){
     Document document;
     Document::AllocatorType& a = document.GetAllocator();
     Value o;
     o.SetObject();
-
-    // add a key value pair directly to the object
-    o.AddMember("balance", currUser->balance, a);
-    
-    // create an array
     Value array;
     array.SetArray();
+    Value to;
 
-    // add an object to our array
-    for(unsigned i = 0; i < transfer.size(); i++){ 
-        if (transfer[i]->to == currUser){ // current user deposit
-            Value to;
+    o.AddMember("balance", transferFromUser->balance, a);
+    unsigned size = transfer.size();
+    for(unsigned i = 0; i < size; i++){ 
+        if (transfer[i]->from->username == transferFromUser->username && transfer[i]->to->username == transferToUser->username){ // current user deposit
             to.SetObject();
             to.AddMember("from", transfer[i]->from->username, a);
             to.AddMember("to", transfer[i]->to->username , a);
@@ -64,16 +80,11 @@ void rapidJSONResponse(vector<Transfer*> transfer, HTTPResponse *response, User 
         }
     }
 
-    // and add the array to our return object
     o.AddMember("transfers", array, a);
-
-    // now some rapidjson boilerplate for converting the JSON object to a string
     document.Swap(o);
     StringBuffer buffer;
     PrettyWriter<StringBuffer> writer(buffer);
     document.Accept(writer);
-
-    // set the return object
     response->setContentType("application/json");
     response->setBody(buffer.GetString() + string("\n"));
 }
@@ -102,6 +113,10 @@ bool errorCheck(User *transferFromUser, HTTPRequest *request, HTTPResponse *resp
     }
     if (transferToUser == NULL){ // to User does not exist
         throw ClientError::notFound(); 
+        return false;
+    }
+    if (transferFromUser == transferToUser){ // transfer to self
+        throw ClientError::badRequest();
         return false;
     }
     return true;
