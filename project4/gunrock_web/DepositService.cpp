@@ -36,15 +36,32 @@ void DepositService::post(HTTPRequest *request, HTTPResponse *response) {
         int amount = stoi(fullRequest.get("amount"));
         string stripeToken = fullRequest.get("stripe_token");
         User *currUser = getAuthenticatedUser(request);
-        currUser->balance += amount;
         
-        Deposit *currDeposit = new Deposit;
-        currDeposit->amount = amount;
-        currDeposit->to = currUser;
-        currDeposit->stripe_charge_id = "NOT WORKING YET"; //CHANGE
-        m_db->deposits.push_back(currDeposit);
-        cout << "pushed"<< endl;
-        rapidJSONResponse( m_db->deposits, response, currUser);
+        WwwFormEncodedDict body;
+        body.set("amount", amount);
+        body.set("source", stripeToken);
+        body.set("currency", "usd");
+        string encoded_body = body.encode();
+
+        HttpClient client("api.stripe.com", 443, true);
+        client.set_basic_auth(m_db->stripe_secret_key, "");
+        HTTPClientResponse *client_response = client.post("/v1/charges", encoded_body);
+        if (client_response->success()){
+            Document *d = client_response->jsonBody();
+
+            Deposit *currDeposit = new Deposit();
+            currDeposit->amount = (*d)["amount"].GetInt();
+            currUser->balance += currDeposit->amount;
+            currDeposit->to = currUser;
+            currDeposit->stripe_charge_id = (*d)["id"].GetString(); 
+            delete d;
+
+            m_db->deposits.push_back(currDeposit);
+            rapidJSONResponse(m_db->deposits, response, currUser);
+            response->setStatus(200);
+        }else{
+            throw ClientError::badRequest(); // invalid stripe token
+        }
     }
 }
 
@@ -79,7 +96,7 @@ void rapidJSONResponse(vector<Deposit*> deposit, HTTPResponse *response, User *c
     }
 
     // and add the array to our return object
-    o.AddMember("transfer", array, a);
+    o.AddMember("deposits", array, a);
 
     // now some rapidjson boilerplate for converting the JSON object to a string
     document.Swap(o);
@@ -107,9 +124,13 @@ bool errorCheck(HTTPRequest *request, HTTPResponse *response){ // if error retur
         throw ClientError::badRequest();
         return false; 
     }
+    if (!(request->hasAuthToken())){ // no auth token
+        throw ClientError::badRequest();
+    }
+
     return true;
 }
-/* Error Check Int meaning */
+/* Error Checks */
 // 1 amount is less than 50 cents
 // 2 no amount provided or no stripe_token provided
 // 3 deposit amount negative
