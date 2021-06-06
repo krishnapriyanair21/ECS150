@@ -1,0 +1,5 @@
+auth username 123 123@me.com
+auth mad 133 
+auth bad 123 123@you.com
+balance
+deposit 20.00 4242424242424242 2024 05 242

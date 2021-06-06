@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
   while ((ret = read(fd, buffer, sizeof(buffer))) > 0) {
 	config << string(buffer, ret);
   }
+
   Document d;
   d.Parse(config.str());
   API_SERVER_PORT = d["api_server_port"].GetInt();
@@ -68,19 +69,23 @@ int main(int argc, char *argv[]) {
       cout<<"D$>";
     }
   }else if (argc == 2){ // batch
-    for (int i = 1; i < argc; i++){
-      ifstream inputFile;
-      inputFile.open(argv[i]);
-      if (!inputFile){
-        errorMessage();
-      }else{
-        while(getline(cin, rawInput)){
-          parsedInput = parse(rawInput);
-          if (parsedInput.size() == 0){
-            errorMessage();
-          }else{
-            executeCmd(parsedInput);
-          }
+    ifstream inputFile;
+    inputFile.open(argv[1]);
+    if (!inputFile){
+      errorMessage();
+    }else{
+      while(getline(inputFile, rawInput)){
+        parsedInput = parse(rawInput);
+        if (parsedInput.size() == 0){
+          errorMessage();
+        }else{
+          /// DELETE
+          // int size = parsedInput.size();
+          // for (int l = 0; l < size; l++){
+          //   cout <<parsedInput[l] << " ";
+          // }
+          // cout <<endl;
+          executeCmd(parsedInput);
         }
       }
     }
@@ -105,9 +110,8 @@ void executeCmd(vector<string> parsedInput){
   if (parsedInput[0] == "logout"){
     // logout
   }else if (parsedInput[0] == "auth"){
-    if (parsedInput.size() != 4){
+    if (parsedInput.size() < 3){
       errorMessage();
-      // cout <<"size"<<endl;
       return;
     }
     auth(parsedInput);
@@ -116,19 +120,19 @@ void executeCmd(vector<string> parsedInput){
       errorMessage();
       return;
     }
-    // cout<<"balance"<<endl;
+    balance(parsedInput);
   }else if (parsedInput[0]== "deposit"){
     if (parsedInput.size() != 6){
       errorMessage();
       return;
     }
-    // cout<<"deposit"<<endl;
+    deposit(parsedInput);
   }else if (parsedInput[0] == "send"){
     if (parsedInput.size() != 3){
       errorMessage();
       return;
     }
-     // cout<<"send"<<endl;
+    //cout<<"send"<<endl; /// DELETE
   }
 }
 
@@ -148,9 +152,13 @@ void printBalance(int balance) {
 void auth(vector<string> parsedInput){
     string username = parsedInput[1];
     string password = parsedInput[2];
-    string email = parsedInput[3];
+    string email = "";
+    if (parsedInput.size() == 4){
+      email = parsedInput[3];
+    }else{
+      email = " ";
+    }
     HTTPClientResponse *response;
-
     WwwFormEncodedDict body;
     body.set("username", username);
     body.set("password", password);
@@ -164,7 +172,7 @@ void auth(vector<string> parsedInput){
     response = authCall.post("/auth-tokens", encoded_body);
     if (serverError(response)){
       errorMessage();
-      // cout <<"auth call "<<endl;
+     /// cout <<"auth call error"<<endl; /// DELETE
     }else{
       Document *d = response->jsonBody();
       string authTokenFromResponse = (*d)["auth_token"].GetString();
@@ -175,10 +183,10 @@ void auth(vector<string> parsedInput){
           // delete user and input new stuffs
           HttpClient deleteCall(host, API_SERVER_PORT, false);
           deleteCall.set_header("x-auth-token", auth_token);
-          response = deleteCall.del("/auth-token/" + auth_token);
+          response = deleteCall.del("/auth-tokens/" + auth_token);
           if (serverError(response)){
             errorMessage();
-            // cout<<"delete call"<<endl;
+            // cout<<"delete call"<<endl; /// DELETE
             return;
           }
       }
@@ -194,7 +202,7 @@ void auth(vector<string> parsedInput){
       response = emailClient.put("/users/" + user_id, encoded_body);
       if (serverError(response)){
         errorMessage();
-        // cout <<"email client"<<endl;
+        cout <<"email client"<<endl; /// DELETE
         return;
       }
 
@@ -204,4 +212,87 @@ void auth(vector<string> parsedInput){
 
       printBalance(balance);
     }
+}
+void balance(vector<string> parsedInput){
+  HTTPClientResponse *response;
+  int hostSize = API_SERVER_HOST.length();
+  char host[hostSize + 1];
+  strcpy(host, API_SERVER_HOST.c_str());
+
+  HttpClient a(host, API_SERVER_PORT, false);
+  a.set_header("x-auth-token", auth_token);
+  response = a.get("/users/" + user_id);
+   if (serverError(response)){
+    errorMessage();
+    return;
+  }
+  Document *b = response->jsonBody();
+  int balance = (*b)["balance"].GetInt();
+  printBalance(balance);
+
+}
+
+void deposit(vector<string> parsedInput){
+  /// init vars
+  int amount = stoi(parsedInput[1]);
+  string cardNumber = parsedInput[2];
+  string yearEXP = parsedInput[3];
+  string monthEXP = parsedInput[4];
+  string CVC = parsedInput[5];
+  string encoded_body;
+  HTTPClientResponse *response;
+  int hostSize = API_SERVER_HOST.length();
+  char host[hostSize + 1];
+  strcpy(host, API_SERVER_HOST.c_str());
+
+  /// error checking
+  if (cardNumber.length() != 16){
+    errorMessage();
+    return;
+  }
+  if (amount < 0){
+    errorMessage();
+    return;
+  }
+
+  /// call to stripe
+  HttpClient stripeCall("api.stripe.com", 443, true);
+  stripeCall.set_header("Authorization", string("Bearer ") + PUBLISHABLE_KEY);
+  
+  WwwFormEncodedDict body;
+  body.set("card[number]", cardNumber);
+  body.set("card[exp_year]", yearEXP);
+  body.set("card[exp_month]", monthEXP);
+  body.set("card[cvc]", CVC);
+  encoded_body = body.encode();
+
+  response = stripeCall.post("/v1/tokens", encoded_body);
+  if (serverError(response)){
+    errorMessage();
+     // cout <<" deposit post error" <<endl; /// DELETE
+    return;
+  }
+  Document *d = response->jsonBody();
+  string stripeTokenFromResponse = (*d)["id"].GetString();
+  delete d;
+
+  WwwFormEncodedDict depositBody;
+  depositBody.set("amount", amount);
+  depositBody.set("stripe_token", stripeTokenFromResponse);
+  encoded_body = depositBody.encode();
+
+  /// call to API
+  HttpClient depositCall(host, API_SERVER_PORT, false);
+  depositCall.set_header("x-auth-token", auth_token);
+  response = depositCall.post("/deposits", encoded_body);
+
+  if (serverError(response)){
+    errorMessage();
+    // cout <<"deposit call to pull balance error"<<endl; /// DELETE
+    return;
+  }
+
+  Document *f = response->jsonBody();
+  int balance = (*f)["balance"].GetInt();
+  printBalance(balance);
 }
