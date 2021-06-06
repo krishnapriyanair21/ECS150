@@ -37,6 +37,7 @@
         "regex": "cpp",
         "utility": "cpp",
         "typeinfo": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "iomanip": "cpp"
     }
 }
