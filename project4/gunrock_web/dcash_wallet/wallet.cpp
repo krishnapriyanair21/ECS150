@@ -35,7 +35,7 @@ void auth(vector<string> parsedInput);
 void balance(vector<string> parsedInput);
 void deposit(vector<string> parsedInput);
 void send(vector<string> parsedInput);
-void logout(vector<string> parsedInput);
+void logout();
 
 int main(int argc, char *argv[]) {
   stringstream config;
@@ -109,6 +109,7 @@ void executeCmd(vector<string> parsedInput){
       errorMessage();
       return;
     }
+    logout();
   }else if (parsedInput[0] == "auth"){
     if (parsedInput.size() < 3){
       errorMessage();
@@ -132,7 +133,7 @@ void executeCmd(vector<string> parsedInput){
       errorMessage();
       return;
     }
-    //cout<<"send"<<endl; /// DELETE
+    send(parsedInput);
   }
 }
 
@@ -172,7 +173,6 @@ void auth(vector<string> parsedInput){
     response = authCall.post("/auth-tokens", encoded_body);
     if (serverError(response)){
       errorMessage();
-     /// cout <<"auth call error"<<endl; /// DELETE
     }else{
       Document *d = response->jsonBody();
       string authTokenFromResponse = (*d)["auth_token"].GetString();
@@ -186,7 +186,6 @@ void auth(vector<string> parsedInput){
           response = deleteCall.del("/auth-tokens/" + auth_token);
           if (serverError(response)){
             errorMessage();
-            // cout<<"delete call"<<endl; /// DELETE
             return;
           }
       }
@@ -202,7 +201,6 @@ void auth(vector<string> parsedInput){
       response = emailClient.put("/users/" + user_id, encoded_body);
       if (serverError(response)){
         errorMessage();
-        //cout <<"email client"<<endl; /// DELETE
         return;
       }
 
@@ -234,8 +232,7 @@ void balance(vector<string> parsedInput){
 
 void deposit(vector<string> parsedInput){
   /// init vars
-  int amount = stoi(parsedInput[1]);
-  amount *= 100;
+  int amount = stoi(parsedInput[1]) * 100;
   string cardNumber = parsedInput[2];
   string yearEXP = parsedInput[3];
   string monthEXP = parsedInput[4];
@@ -270,7 +267,6 @@ void deposit(vector<string> parsedInput){
   response = stripeCall.post("/v1/tokens", encoded_body);
   if (serverError(response)){
     errorMessage();
-    //cout <<" deposit post error" <<endl; /// DELETE
     return;
   }
   Document *d = response->jsonBody();
@@ -289,7 +285,6 @@ void deposit(vector<string> parsedInput){
 
   if (serverError(response)){
     errorMessage();
-    //cout <<"deposit call to pull balance error"<<endl; /// DELETE
     return;
   }
 
@@ -304,12 +299,31 @@ void send(vector<string> parsedInput){
   char host[hostSize + 1];
   strcpy(host, API_SERVER_HOST.c_str());
   string sendToUser = parsedInput[1];
-  string amount = parsedInput[2];  
-  // find to user
+  int amount = stoi(parsedInput[2]) * 100; 
+  string encoded_body; 
+  // create encoded form body
+  WwwFormEncodedDict depositBody;
+  depositBody.set("to", sendToUser);
+  depositBody.set("amount", amount);
+  encoded_body = depositBody.encode();
   // transfer post
+  HttpClient transferPost(host, API_SERVER_PORT, false);
+  transferPost.set_header("x-auth-token", auth_token);
+  response = transferPost.post("/transfers", encoded_body);
+
+  if (serverError(response)){
+    errorMessage();
+    return;
+  }
+
+  Document *a = response->jsonBody();
+  int balance = (*a)["balance"].GetInt();
+  delete a;
+
+  printBalance(balance);
 }
 
-void logout(vector<string> parsedInput){
+void logout(){
   int hostSize = API_SERVER_HOST.length();
   char host[hostSize + 1];
   strcpy(host, API_SERVER_HOST.c_str());
