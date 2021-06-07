@@ -67,7 +67,7 @@ void rapidJSONResponse(vector<Transfer*> transfer, HTTPResponse *response, User 
     Value array;
     array.SetArray();
     Value to;
-
+    
     o.AddMember("balance", transferFromUser->balance, a);
     unsigned size = transfer.size();
     for(unsigned i = 0; i < size; i++){ 

@@ -48,7 +48,7 @@ void DepositService::post(HTTPRequest *request, HTTPResponse *response) {
         HTTPClientResponse *client_response = client.post("/v1/charges", encoded_body);
         if (client_response->success()){
             Document *d = client_response->jsonBody();
-
+            /// deposit object
             Deposit *currDeposit = new Deposit();
             currDeposit->amount = (*d)["amount"].GetInt();
             currUser->balance += currDeposit->amount;
@@ -58,7 +58,6 @@ void DepositService::post(HTTPRequest *request, HTTPResponse *response) {
 
             m_db->deposits.push_back(currDeposit);
             rapidJSONResponse(m_db->deposits, response, currUser);
-            response->setStatus(200);
         }else{
             throw ClientError::badRequest(); // invalid stripe token
         }
@@ -70,16 +69,11 @@ void DepositService::get(HTTPRequest *request, HTTPResponse *response) {
 }
 
 void rapidJSONResponse(vector<Deposit*> deposit, HTTPResponse *response, User *currUser){
-    // use rapidjson to create a return object
     Document document;
     Document::AllocatorType& a = document.GetAllocator();
     Value o;
     o.SetObject();
-
-    // add a key value pair directly to the object
     o.AddMember("balance", currUser->balance, a);
-    
-    // create an array
     Value array;
     array.SetArray();
 
@@ -95,16 +89,12 @@ void rapidJSONResponse(vector<Deposit*> deposit, HTTPResponse *response, User *c
         }
     }
 
-    // and add the array to our return object
     o.AddMember("deposits", array, a);
 
-    // now some rapidjson boilerplate for converting the JSON object to a string
     document.Swap(o);
     StringBuffer buffer;
     PrettyWriter<StringBuffer> writer(buffer);
     document.Accept(writer);
-
-    // set the return object
     response->setContentType("application/json");
     response->setBody(buffer.GetString() + string("\n"));
 }
@@ -118,8 +108,7 @@ bool errorCheck(HTTPRequest *request, HTTPResponse *response){ // if error retur
         return false;
     }
     std::string::size_type sz;
-    int amount = std::stoi(amountString, &sz); // convert to int (stoi works in CSIF)
-
+    int amount = std::stoi(amountString, &sz);
     if (amount < 50){ // amount is < 50
         throw ClientError::badRequest();
         return false; 
@@ -127,10 +116,5 @@ bool errorCheck(HTTPRequest *request, HTTPResponse *response){ // if error retur
     if (!(request->hasAuthToken())){ // no auth token
         throw ClientError::badRequest();
     }
-
-    return true;
+    return true; // no errors
 }
-/* Error Checks */
-// 1 amount is less than 50 cents
-// 2 no amount provided or no stripe_token provided
-// 3 deposit amount negative

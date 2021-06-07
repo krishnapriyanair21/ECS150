@@ -44,7 +44,6 @@ void AccountService::get(HTTPRequest *request, HTTPResponse *response) {
             email = currUserWithID->email;
             balance = currUserWithID->balance;
             rapidJSONResponse(email, balance, response);
-            response->setStatus(200);
         }
         else{
             throw ClientError::forbidden();
@@ -78,9 +77,7 @@ void AccountService::put(HTTPRequest *request, HTTPResponse *response) {
             if (checkUserwithUserID == currUserwithAuthToken){
                 currUserwithAuthToken->email = email;
                 balance = currUserwithAuthToken->balance;
-                // set up response object
                 rapidJSONResponse(email, balance, response);
-                response->setStatus(200);
             }
             else{ // auth_token is not for correct user_id
                 throw ClientError::unauthorized();
@@ -93,23 +90,16 @@ void AccountService::put(HTTPRequest *request, HTTPResponse *response) {
 
 
 void rapidJSONResponse(string email, int balance, HTTPResponse *response){
-    // use rapidjson to create a return object
     Document document;
     Document::AllocatorType& a = document.GetAllocator();
     Value o;
     o.SetObject();
-
-    // add a key value pair directly to the object
     o.AddMember("balance", balance, a);
     o.AddMember("email", email, a);
-
-    // now some rapidjson boilerplate for converting the JSON object to a string
     document.Swap(o);
     StringBuffer buffer;
     PrettyWriter<StringBuffer> writer(buffer);
     document.Accept(writer);
-
-    // set the return object
     response->setContentType("application/json");
     response->setBody(buffer.GetString() + string("\n"));
 }
