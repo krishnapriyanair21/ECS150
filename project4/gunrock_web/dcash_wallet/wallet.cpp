@@ -103,6 +103,7 @@ vector<string> parse(string rawInput){  // stack overflow
 	}
 	return parsedInput;
 }
+
 void executeCmd(vector<string> parsedInput){
   if (parsedInput[0] == "logout"){
     if (parsedInput.size() != 1){
@@ -145,7 +146,10 @@ bool serverError(HTTPClientResponse *response){
   }
 }
 
-void printBalance(int balance) {
+void printBalance(HTTPClientResponse *response) {
+  Document *e = response->jsonBody();
+  int balance = (*e)["balance"].GetInt();
+  delete e; 
   float printBal =  balance / 100;
   cout << "Balance: $" << setprecision(2) << fixed << printBal << endl;
 }
@@ -203,12 +207,7 @@ void auth(vector<string> parsedInput){
         errorMessage();
         return;
       }
-
-      Document *e = response->jsonBody();
-      int balance = (*e)["balance"].GetInt();
-      delete e; 
-
-      printBalance(balance);
+      printBalance(response);
     }
 }
 void balance(vector<string> parsedInput){
@@ -224,9 +223,7 @@ void balance(vector<string> parsedInput){
     errorMessage();
     return;
   }
-  Document *b = response->jsonBody();
-  int balance = (*b)["balance"].GetInt();
-  printBalance(balance);
+  printBalance(response);
 
 }
 
@@ -288,9 +285,7 @@ void deposit(vector<string> parsedInput){
     return;
   }
 
-  Document *f = response->jsonBody();
-  int balance = (*f)["balance"].GetInt();
-  printBalance(balance);
+  printBalance(response);
 }
 
 void send(vector<string> parsedInput){
@@ -316,11 +311,7 @@ void send(vector<string> parsedInput){
     return;
   }
 
-  Document *a = response->jsonBody();
-  int balance = (*a)["balance"].GetInt();
-  delete a;
-
-  printBalance(balance);
+  printBalance(response);
 }
 
 void logout(){
